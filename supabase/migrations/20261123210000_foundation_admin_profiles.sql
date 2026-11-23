@@ -1,18 +1,10 @@
--- Foundation: shared trigger function, admin roles, admin_profiles and role helpers.
---
--- Grant convention for every table in this project:
---   1. revoke all from anon, authenticated, service_role (the local default ACL hands
---      them TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on new tables),
---   2. grant exactly the privileges each role needs,
---   3. RLS enabled in the same migration, policies split by role ("to anon" policies
---      never call is_admin()/is_owner(), which anon cannot execute).
+-- Each table revokes everything from the API roles first, because the default ACL
+-- hands them truncate and trigger rights, then grants only what is needed.
+-- Anon policies never call is_admin() or is_owner(), which anon cannot execute.
 
--- Functions created later in public must not be executable by PUBLIC by default.
+-- New functions are not executable by PUBLIC unless granted.
 alter default privileges in schema public revoke execute on functions from public;
 
--- ---------------------------------------------------------------------------
--- updated_at trigger
--- ---------------------------------------------------------------------------
 create function public.set_updated_at() returns trigger
 language plpgsql
 set search_path = ''
@@ -25,9 +17,6 @@ $$;
 
 revoke execute on function public.set_updated_at() from public, anon, authenticated;
 
--- ---------------------------------------------------------------------------
--- admin_profiles
--- ---------------------------------------------------------------------------
 create type public.admin_role as enum ('owner', 'team_member');
 
 create table public.admin_profiles (
@@ -41,16 +30,13 @@ create table public.admin_profiles (
 alter table public.admin_profiles enable row level security;
 
 revoke all on table public.admin_profiles from anon, authenticated, service_role;
--- Signed-in admins read profiles; the owner changes name, role and active flag.
--- New profiles are created only by the owner's invitation route (service role).
+-- Profiles are only created by the invite route, which uses the service role.
 grant select on table public.admin_profiles to authenticated;
 grant update (full_name, role, is_active) on table public.admin_profiles to authenticated;
 grant select, insert, update, delete on table public.admin_profiles to service_role;
 
--- ---------------------------------------------------------------------------
--- Role helpers. SECURITY DEFINER so they can read admin_profiles under RLS.
--- Roles live in the table, not the token: deactivation takes effect at once.
--- ---------------------------------------------------------------------------
+-- Security definer so they can read admin_profiles under RLS. Roles live in the
+-- table, not the token, so deactivating someone takes effect at once.
 create function public.is_admin() returns boolean
 language sql stable security definer
 set search_path = ''
@@ -76,9 +62,6 @@ revoke execute on function public.is_owner() from public, anon;
 grant execute on function public.is_admin() to authenticated, service_role;
 grant execute on function public.is_owner() to authenticated, service_role;
 
--- ---------------------------------------------------------------------------
--- admin_profiles policies (authenticated only; anon has no grant at all)
--- ---------------------------------------------------------------------------
 create policy "admin_profiles: read own row or owner reads all"
   on public.admin_profiles for select to authenticated
   using (id = (select auth.uid()) or (select public.is_owner()));
@@ -88,11 +71,7 @@ create policy "admin_profiles: owner updates"
   using ((select public.is_owner()))
   with check ((select public.is_owner()));
 
--- ---------------------------------------------------------------------------
--- Assignee list. The guide keeps full profile rows owner-only; team members
--- still need names to assign inquiries, so this returns id and name only,
--- and only to an active admin.
--- ---------------------------------------------------------------------------
+-- Team members need assignee names without reading other people's profile rows.
 create function public.list_active_admins()
 returns table (id uuid, full_name text)
 language sql stable security definer

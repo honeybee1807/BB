@@ -1,9 +1,7 @@
--- Property photos: rows point at WebP files in the public property-photos bucket.
-
 create table public.property_photos (
   id uuid primary key default gen_random_uuid(),
   property_id uuid not null references public.properties (id) on delete cascade,
-  -- Paths inside the property-photos bucket: 1920px WebP and 640px thumbnail
+  -- 1920px image and 640px thumbnail in the property-photos bucket
   storage_path text not null check (char_length(storage_path) between 1 and 300 and storage_path !~ '\.\.'),
   thumb_path text not null check (char_length(thumb_path) between 1 and 300 and thumb_path !~ '\.\.'),
   alt_text text not null default '' check (char_length(alt_text) <= 250),
@@ -19,8 +17,7 @@ create unique index property_photos_one_cover_idx on public.property_photos (pro
 
 alter table public.property_photos enable row level security;
 
--- 20-photo cap per property. SECURITY DEFINER so the count is not filtered by RLS;
--- the property row lock serialises concurrent uploads.
+-- Security definer so the count ignores RLS. The row lock serialises parallel uploads.
 create function public.enforce_property_photo_cap() returns trigger
 language plpgsql security definer
 set search_path = ''

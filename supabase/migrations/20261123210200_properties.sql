@@ -1,11 +1,5 @@
--- Properties, the owner-only soft-delete trigger (shared with blog_posts and inquiries)
--- and the custom_fields validator.
-
--- ---------------------------------------------------------------------------
--- Owner-only soft delete. Enforced here AND in the RLS policies.
--- Applies to API roles only: the service role (server-side purge/restore) and
--- migrations are not API callers and are trusted.
--- ---------------------------------------------------------------------------
+-- Backs up the RLS policies. Only API roles are checked; purge and restore run
+-- server-side with the service role.
 create function public.enforce_owner_soft_delete() returns trigger
 language plpgsql
 set search_path = ''
@@ -25,10 +19,7 @@ $$;
 
 revoke execute on function public.enforce_owner_soft_delete() from public, anon, authenticated;
 
--- ---------------------------------------------------------------------------
--- custom_fields: a JSON array of at most 30 {"label": text, "value": text} objects.
--- Used in a CHECK constraint, so writers need EXECUTE. It is pure and reveals nothing.
--- ---------------------------------------------------------------------------
+-- Used in a check constraint, so anyone who writes properties needs execute on it.
 create function public.is_valid_custom_fields(p_fields jsonb) returns boolean
 language sql immutable
 set search_path = ''
@@ -52,9 +43,6 @@ $$;
 revoke execute on function public.is_valid_custom_fields(jsonb) from public, anon;
 grant execute on function public.is_valid_custom_fields(jsonb) to authenticated, service_role;
 
--- ---------------------------------------------------------------------------
--- properties
--- ---------------------------------------------------------------------------
 create type public.property_type as enum ('resort', 'holiday_home');
 
 create table public.properties (
@@ -76,7 +64,7 @@ create table public.properties (
     and instagram_video_url ~ '^https://(www\.)?instagram\.com/(p|reel|reels|tv)/[A-Za-z0-9_-]+/?(\?[A-Za-z0-9_=&%.-]*)?$'
   ),
   custom_fields jsonb not null default '[]'::jsonb check (public.is_valid_custom_fields(custom_fields)),
-  -- Optional "From R... / night". Hidden in the UI when null.
+  -- hidden in the UI when null
   price_from_zar int check (price_from_zar between 0 and 10000000),
   is_featured boolean not null default false,
   featured_sort_order int not null default 0,
@@ -101,7 +89,7 @@ create trigger properties_owner_soft_delete before insert or update on public.pr
 
 revoke all on table public.properties from anon, authenticated, service_role;
 grant select on table public.properties to anon;
--- No DELETE for authenticated: removal is a soft delete; purge runs with the service role.
+-- No delete grant: removal is a soft delete, purge runs with the service role.
 grant select, insert, update on table public.properties to authenticated;
 grant select, insert, update, delete on table public.properties to service_role;
 

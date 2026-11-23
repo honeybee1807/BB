@@ -1,16 +1,11 @@
--- Journal posts and static-page SEO.
-
--- ---------------------------------------------------------------------------
--- blog_posts: public sees published, non-deleted. Admins write. Owner soft deletes.
--- ---------------------------------------------------------------------------
 create table public.blog_posts (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(slug) <= 120),
   title text not null check (char_length(btrim(title)) between 1 and 160),
   excerpt text check (char_length(excerpt) <= 300),
-  -- Markdown, rendered without raw HTML.
+  -- rendered without raw HTML
   body_md text not null default '' check (char_length(body_md) <= 50000),
-  -- Path inside the blog-images bucket
+  -- path in the blog-images bucket
   featured_image_path text check (char_length(featured_image_path) <= 300 and featured_image_path !~ '\.\.'),
   author_id uuid references public.admin_profiles (id) on delete set null,
   is_published boolean not null default false,
@@ -29,7 +24,7 @@ create index blog_posts_public_listing_idx on public.blog_posts (published_at de
 
 alter table public.blog_posts enable row level security;
 
--- Stamp published_at the first time a post is published (kept on unpublish/republish).
+-- Keeps the first publish date if a post is unpublished and published again.
 create function public.set_blog_published_at() returns trigger
 language plpgsql
 set search_path = ''
@@ -77,14 +72,11 @@ create policy "blog_posts: admins update, owner soft deletes" on public.blog_pos
   using ((select public.is_admin()) and (deleted_at is null or (select public.is_owner())))
   with check ((select public.is_admin()) and (deleted_at is null or (select public.is_owner())));
 
--- ---------------------------------------------------------------------------
--- seo_pages: title and meta for static pages. Public read, owner write.
--- ---------------------------------------------------------------------------
 create table public.seo_pages (
   path text primary key check (path ~ '^/[a-z0-9/-]*$' and char_length(path) <= 200),
   title text not null check (char_length(btrim(title)) between 1 and 120),
   description text not null check (char_length(btrim(description)) between 1 and 320),
-  -- Path inside the property-photos bucket, or null for the site default
+  -- path in property-photos, null for the site default
   og_image_path text check (char_length(og_image_path) <= 300 and og_image_path !~ '\.\.'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -112,8 +104,7 @@ create policy "seo_pages: owner update" on public.seo_pages
 create policy "seo_pages: owner delete" on public.seo_pages
   for delete to authenticated using ((select public.is_owner()));
 
--- Default rows for the static pages (editable by the owner in Settings).
--- Titles are complete; the app does not append a suffix to them.
+-- Titles are stored complete, the app adds no suffix.
 insert into public.seo_pages (path, title, description) values
   ('/', 'Halal Accommodation South Africa | Bargain Breaks',
    'Halal-conscious holiday homes and resorts from the coast to the mountains, each one personally reviewed.'),

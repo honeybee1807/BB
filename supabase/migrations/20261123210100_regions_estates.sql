@@ -1,14 +1,11 @@
 -- Regions and estates: public read, owner write.
 
--- ---------------------------------------------------------------------------
--- regions
--- ---------------------------------------------------------------------------
 create table public.regions (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(slug) <= 120),
   name text not null check (char_length(btrim(name)) between 1 and 120),
   description text check (char_length(description) <= 10000),
-  -- Path inside the property-photos bucket (regions/...)
+  -- path in the property-photos bucket
   hero_image_path text check (char_length(hero_image_path) <= 300),
   sort_order int not null default 0,
   seo_title text check (char_length(seo_title) <= 120),
@@ -39,16 +36,13 @@ create policy "regions: owner update" on public.regions
 create policy "regions: owner delete" on public.regions
   for delete to authenticated using ((select public.is_owner()));
 
--- ---------------------------------------------------------------------------
--- estates
--- ---------------------------------------------------------------------------
 create table public.estates (
   id uuid primary key default gen_random_uuid(),
   region_id uuid not null references public.regions (id) on delete restrict,
   slug text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(slug) <= 120),
   name text not null check (char_length(btrim(name)) between 1 and 120),
   description text check (char_length(description) <= 10000),
-  -- Path inside the property-photos bucket (estates/...)
+  -- path in the property-photos bucket
   hero_image_path text check (char_length(hero_image_path) <= 300),
   sort_order int not null default 0,
   seo_title text check (char_length(seo_title) <= 120),

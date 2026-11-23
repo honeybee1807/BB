@@ -1,10 +1,6 @@
--- audit_log and rate_limits: written and read by the server only (service role).
--- anon and authenticated have NO grants. RLS is enabled with no policies, so even a
--- stray grant would expose nothing. Both tables are pruned by pg_cron.
+-- Server only. RLS is on with no policies, so a stray grant would still expose nothing.
 
--- ---------------------------------------------------------------------------
--- audit_log. No guest personal data: ids and hashed IPs only.
--- ---------------------------------------------------------------------------
+-- No guest data here, only ids and hashed IPs.
 create table public.audit_log (
   id bigint generated always as identity primary key,
   actor_id uuid references auth.users (id) on delete set null,
@@ -26,10 +22,7 @@ revoke all on table public.audit_log from anon, authenticated, service_role;
 revoke all on sequence public.audit_log_id_seq from anon, authenticated, service_role;
 grant select, insert, delete on table public.audit_log to service_role;
 
--- ---------------------------------------------------------------------------
--- rate_limits: one row per counted event, keyed by a bucket name and a hash
--- (hashed IP or hashed email; never the raw value).
--- ---------------------------------------------------------------------------
+-- One row per event. Keys are hashes, never raw IPs or emails.
 create table public.rate_limits (
   id bigint generated always as identity primary key,
   bucket text not null check (bucket ~ '^[a-z_]+$' and char_length(bucket) <= 40),
@@ -46,7 +39,6 @@ revoke all on table public.rate_limits from anon, authenticated, service_role;
 revoke all on sequence public.rate_limits_id_seq from anon, authenticated, service_role;
 grant select, insert, delete on table public.rate_limits to service_role;
 
--- Events for a key inside the window.
 create function public.rate_limit_count(p_bucket text, p_key_hash text, p_window_seconds integer)
 returns integer
 language sql stable
@@ -59,9 +51,7 @@ as $$
     and created_at > now() - make_interval(secs => p_window_seconds);
 $$;
 
--- Atomically: if fewer than p_max events exist in the window, record one and
--- return true; otherwise record nothing and return false. The advisory lock
--- serialises concurrent calls for the same key.
+-- The advisory lock serialises calls for the same key, so the limit can't be overrun.
 create function public.rate_limit_hit(p_bucket text, p_key_hash text, p_window_seconds integer, p_max integer)
 returns boolean
 language plpgsql
@@ -80,7 +70,6 @@ begin
 end;
 $$;
 
--- Record one event unconditionally (for example a failed login).
 create function public.rate_limit_record(p_bucket text, p_key_hash text)
 returns void
 language sql
@@ -89,7 +78,6 @@ as $$
   insert into public.rate_limits (bucket, key_hash) values (p_bucket, p_key_hash);
 $$;
 
--- Clear a key's events (for example failed logins after a successful sign-in).
 create function public.rate_limit_clear(p_bucket text, p_key_hash text)
 returns void
 language sql
@@ -107,9 +95,7 @@ grant execute on function public.rate_limit_hit(text, text, integer, integer) to
 grant execute on function public.rate_limit_record(text, text) to service_role;
 grant execute on function public.rate_limit_clear(text, text) to service_role;
 
--- ---------------------------------------------------------------------------
--- Pruning with pg_cron (daily). Availability is never pruned.
--- ---------------------------------------------------------------------------
+-- Availability is never pruned.
 create extension if not exists pg_cron with schema pg_catalog;
 
 select cron.schedule(

@@ -1,5 +1,4 @@
--- Availability: a row means the night is blocked; no row means open.
--- No bookings are tracked. Past rows are never pruned.
+-- A row means the night is blocked. Past rows are never pruned.
 
 create table public.availability_blocks (
   property_id uuid not null references public.properties (id) on delete cascade,
@@ -8,12 +7,12 @@ create table public.availability_blocks (
   primary key (property_id, date)
 );
 
--- Overview grid queries scan by date across all properties.
+-- for the all-properties grid
 create index availability_blocks_date_idx on public.availability_blocks (date);
 
 alter table public.availability_blocks enable row level security;
 
--- Anon: NO grants and NO policies. Public dates go only through get_blocked_dates().
+-- Nothing for anon. Public dates only come through get_blocked_dates().
 revoke all on table public.availability_blocks from anon, authenticated, service_role;
 grant select, insert, delete on table public.availability_blocks to authenticated;
 grant select, insert, update, delete on table public.availability_blocks to service_role;
@@ -25,10 +24,6 @@ create policy "availability_blocks: admins block" on public.availability_blocks
 create policy "availability_blocks: admins open" on public.availability_blocks
   for delete to authenticated using ((select public.is_admin()));
 
--- ---------------------------------------------------------------------------
--- Range validation shared by the functions below: both ends required,
--- from <= to, at most 366 nights inclusive.
--- ---------------------------------------------------------------------------
 create function public.assert_valid_date_range(p_from date, p_to date) returns void
 language plpgsql immutable
 set search_path = ''
@@ -49,10 +44,7 @@ $$;
 revoke execute on function public.assert_valid_date_range(date, date) from public, anon;
 grant execute on function public.assert_valid_date_range(date, date) to authenticated, service_role;
 
--- ---------------------------------------------------------------------------
--- Admin range helpers. SECURITY INVOKER: RLS on availability_blocks applies,
--- so only active admins can use them. Repeats are harmless.
--- ---------------------------------------------------------------------------
+-- Security invoker, so RLS limits these to active admins.
 create function public.block_dates(p_property_id uuid, p_from date, p_to date) returns integer
 language plpgsql
 set search_path = ''
@@ -89,12 +81,7 @@ revoke execute on function public.open_dates(uuid, date, date) from public, anon
 grant execute on function public.block_dates(uuid, date, date) to authenticated;
 grant execute on function public.open_dates(uuid, date, date) to authenticated;
 
--- ---------------------------------------------------------------------------
--- Public read path. SECURITY DEFINER with an empty search_path.
--- Returns blocked dates only for a published, non-deleted property;
--- anything else (draft, deleted, unknown id) returns an empty set.
--- The public page calls it only when NEXT_PUBLIC_SHOW_PUBLIC_AVAILABILITY is on.
--- ---------------------------------------------------------------------------
+-- Drafts, deleted and unknown properties return nothing.
 create function public.get_blocked_dates(p_property_id uuid, p_from date, p_to date)
 returns setof date
 language plpgsql stable security definer

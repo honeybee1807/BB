@@ -1,5 +1,4 @@
--- Inquiries: tracked leads. Inserted only by the public inquiry route with the
--- service role. Anon has NO grants. Admins read and manage; owner-only soft delete.
+-- Only the public inquiry route inserts here, using the service role.
 
 create type public.inquiry_status as enum ('new', 'in_progress', 'actioned');
 create type public.accommodation_preference as enum ('resort', 'holiday_home', 'no_preference');
@@ -44,8 +43,7 @@ create trigger inquiries_set_updated_at before update on public.inquiries
 create trigger inquiries_owner_soft_delete before insert or update on public.inquiries
   for each row execute function public.enforce_owner_soft_delete();
 
--- Anon: nothing. Authenticated: read, and update only the workflow columns.
--- No INSERT (the public route uses the service role) and no DELETE (soft delete only).
+-- Workflow columns only, so guest details can't be changed through the API.
 revoke all on table public.inquiries from anon, authenticated, service_role;
 grant select on table public.inquiries to authenticated;
 grant update (status, assigned_to, internal_notes, deleted_at) on table public.inquiries to authenticated;
