@@ -2,26 +2,31 @@
  * Phase 2 REST and Storage API tests against the LOCAL Supabase stack.
  * Proves through the real Data API (PostgREST) and Storage API what the pgTAP
  * tests prove in SQL: anon, team member and owner see and do only what they should.
+ * The owner counts as owner only in a TOTP-verified (aal2) session.
  */
 import { randomBytes, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { client, readLocalStack, signedInClient, type Db } from "./local-stack";
+import { enrolAndVerifyTotp } from "./totp";
 
 const stack = readLocalStack();
 const admin = client(stack.url, stack.serviceKey); // fixtures and cleanup only
 const anon = client(stack.url, stack.anonKey);
 let team: Db;
-let owner: Db;
+let owner: Db; // aal2 (TOTP verified)
+let ownerAal1: Db; // same owner, password only
 
 const run = randomBytes(4).toString("hex");
 const slug = (s: string) => `apitest-${run}-${s}`;
 const password = `${randomBytes(18).toString("base64url")}Aa1!`;
 const ownerEmail = `apitest-owner-${run}@test.local`;
 const teamEmail = `apitest-team-${run}@test.local`;
+const recoveryEmail = `apitest-recovery-${run}@test.local`;
 
 const ids = {
   owner: "",
   team: "",
+  recovery: "",
   region: randomUUID(),
   estate: randomUUID(),
   published: randomUUID(),
@@ -83,7 +88,11 @@ beforeAll(async () => {
   }), "inquiry");
   check(await admin.storage.from("property-photos").upload(photoPath, webpBytes, { contentType: "image/webp" }), "photo upload");
 
+  check(await admin.from("audit_log").insert({ action: "apitest.seed" }), "audit seed");
+
   owner = await signedInClient(stack, ownerEmail, password);
+  await enrolAndVerifyTotp(owner); // raises this session to aal2
+  ownerAal1 = await signedInClient(stack, ownerEmail, password); // a fresh password-only session
   team = await signedInClient(stack, teamEmail, password);
 });
 
@@ -95,7 +104,7 @@ afterAll(async () => {
   await admin.from("estates").delete().eq("id", ids.estate);
   await admin.from("regions").delete().like("slug", `apitest-${run}-%`);
   await admin.from("audit_log").delete().like("action", "apitest%");
-  for (const id of [ids.owner, ids.team]) if (id) await admin.auth.admin.deleteUser(id);
+  for (const id of [ids.owner, ids.team, ids.recovery]) if (id) await admin.auth.admin.deleteUser(id);
 });
 
 describe("anon: public content tables return rows or an empty set, never an error", () => {
@@ -307,7 +316,23 @@ describe("team member through the API", () => {
   it("cannot hard delete, edit regions or read the audit log", async () => {
     expect((await team.from("properties").delete().eq("id", ids.draft)).error?.code).toBe("42501");
     expect((await team.from("regions").insert({ slug: slug("team"), name: "Team" })).error?.code).toBe("42501");
-    expect((await team.from("audit_log").select("*").limit(1)).error?.code).toBe("42501");
+    const audit = await team.from("audit_log").select("id").limit(1);
+    expect(audit.error).toBeNull();
+    expect(audit.data).toEqual([]);
+  });
+
+  it("can delete a property photo row (decision 1)", async () => {
+    const inserted = await admin.from("property_photos")
+      .insert({ property_id: ids.draft, storage_path: "team-del.webp", thumb_path: "team-del-t.webp" }).select("id").single();
+    if (inserted.error) throw new Error(`photo: ${inserted.error.message}`);
+    const photo = inserted.data;
+    const { data, error } = await team.from("property_photos").delete().eq("id", photo.id).select("id");
+    expect(error).toBeNull();
+    expect(data).toEqual([{ id: photo.id }]);
+  });
+
+  it("cannot delete page SEO rows", async () => {
+    expect((await team.from("seo_pages").delete().eq("path", "/about")).error?.code).toBe("42501");
   });
 
   it("can block and open dates with the range functions", async () => {
@@ -336,8 +361,57 @@ describe("owner through the API", () => {
     expect(s.data).toEqual([{ path: "/about" }]);
   });
 
-  it("cannot read audit_log or rate_limits through the API (server only)", async () => {
-    expect((await owner.from("audit_log").select("*").limit(1)).error?.code).toBe("42501");
+  it("can read the audit log (read only) but not rate_limits", async () => {
+    const { data, error } = await owner.from("audit_log").select("action").eq("action", "apitest.seed");
+    expect(error).toBeNull();
+    expect(data).toEqual([{ action: "apitest.seed" }]);
+    expect((await owner.from("audit_log").insert({ action: "apitest.owner" })).error?.code).toBe("42501");
     expect((await owner.from("rate_limits").select("*").limit(1)).error?.code).toBe("42501");
+  });
+
+  it("cannot delete page SEO rows (no DELETE grant)", async () => {
+    expect((await owner.from("seo_pages").delete().eq("path", "/about")).error?.code).toBe("42501");
+  });
+});
+
+describe("owner two-factor layer (aal2 required)", () => {
+  it("rpc is_owner: false at aal1, true at aal2", async () => {
+    expect((await ownerAal1.rpc("is_owner")).data).toBe(false);
+    expect((await ownerAal1.rpc("is_admin")).data).toBe(false);
+    expect((await owner.rpc("is_owner")).data).toBe(true);
+  });
+
+  it("owner at aal1 can read only their own profile, so the app can ask for TOTP", async () => {
+    const { data, error } = await ownerAal1.from("admin_profiles").select("id, role");
+    expect(error).toBeNull();
+    expect(data).toEqual([{ id: ids.owner, role: "owner" }]);
+  });
+
+  it("owner at aal1 is refused: no inquiries, no writes, no soft delete, no audit log", async () => {
+    expect((await ownerAal1.from("inquiries").select("id")).data).toEqual([]);
+    expect((await ownerAal1.from("regions").insert({ slug: slug("aal1"), name: "X" })).error?.code).toBe("42501");
+    const del = await ownerAal1.from("properties").update({ deleted_at: new Date().toISOString() }).eq("id", ids.draft).select("id");
+    expect(del.data ?? []).toEqual([]);
+    expect((await ownerAal1.from("audit_log").select("id")).data).toEqual([]);
+  });
+
+  it("the recovery owner can enrol TOTP from an aal1 session (no owner rights needed) and then act as owner", async () => {
+    ids.recovery = await createAdminUser(recoveryEmail);
+    check(await admin.from("admin_profiles").insert({ id: ids.recovery, full_name: "API Recovery Owner", role: "owner" }), "recovery");
+    const recovery = await signedInClient(stack, recoveryEmail, password);
+    expect((await recovery.rpc("is_owner")).data).toBe(false);
+    await enrolAndVerifyTotp(recovery);
+    expect((await recovery.rpc("is_owner")).data).toBe(true);
+  });
+
+  it("the last active owner cannot be demoted or deactivated", async () => {
+    const off = await owner.from("admin_profiles").update({ is_active: false }).eq("id", ids.recovery).select("id");
+    expect(off.data).toEqual([{ id: ids.recovery }]);
+    const self = await owner.from("admin_profiles").update({ role: "team_member" }).eq("id", ids.owner);
+    expect(self.error?.code).toBe("23514");
+    const deactivate = await owner.from("admin_profiles").update({ is_active: false }).eq("id", ids.owner);
+    expect(deactivate.error?.code).toBe("23514");
+    const back = await owner.from("admin_profiles").update({ is_active: true }).eq("id", ids.recovery).select("id");
+    expect(back.data).toEqual([{ id: ids.recovery }]);
   });
 });

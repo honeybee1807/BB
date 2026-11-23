@@ -74,7 +74,7 @@ select is((select status::text from public.inquiries where id = '50000000-0000-0
   'status change was stored');
 
 -- Owner ---------------------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.inquiries), 3, 'owner: sees all inquiries, including soft-deleted');
 select isnt_empty($$update public.inquiries set deleted_at = now() where id = '50000000-0000-0000-0000-000000000002' returning id$$,

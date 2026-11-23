@@ -73,14 +73,14 @@ isOneToOne: false
                   ]
                 },"blog_posts": {
                   Row: {
-                    "author_id": string | null,"body_md": string,"created_at": string,"deleted_at": string | null,"excerpt": string | null,"featured_image_path": string | null,"id": string,"is_published": boolean,"published_at": string | null,"seo_description": string | null,"seo_title": string | null,"slug": string,"title": string,"updated_at": string
+                    "author_id": string | null,"body_md": string,"created_at": string,"deleted_at": string | null,"excerpt": string | null,"featured_image_alt": string | null,"featured_image_path": string | null,"id": string,"is_published": boolean,"published_at": string | null,"seo_description": string | null,"seo_title": string | null,"slug": string,"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "author_id"?: string | null,"body_md"?: string,"created_at"?: string,"deleted_at"?: string | null,"excerpt"?: string | null,"featured_image_path"?: string | null,"id"?: string,"is_published"?: boolean,"published_at"?: string | null,"seo_description"?: string | null,"seo_title"?: string | null,"slug": string,"title": string,"updated_at"?: string
+                    "author_id"?: string | null,"body_md"?: string,"created_at"?: string,"deleted_at"?: string | null,"excerpt"?: string | null,"featured_image_alt"?: string | null,"featured_image_path"?: string | null,"id"?: string,"is_published"?: boolean,"published_at"?: string | null,"seo_description"?: string | null,"seo_title"?: string | null,"slug": string,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "author_id"?: string | null,"body_md"?: string,"created_at"?: string,"deleted_at"?: string | null,"excerpt"?: string | null,"featured_image_path"?: string | null,"id"?: string,"is_published"?: boolean,"published_at"?: string | null,"seo_description"?: string | null,"seo_title"?: string | null,"slug"?: string,"title"?: string,"updated_at"?: string
+                    "author_id"?: string | null,"body_md"?: string,"created_at"?: string,"deleted_at"?: string | null,"excerpt"?: string | null,"featured_image_alt"?: string | null,"featured_image_path"?: string | null,"id"?: string,"is_published"?: boolean,"published_at"?: string | null,"seo_description"?: string | null,"seo_title"?: string | null,"slug"?: string,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {

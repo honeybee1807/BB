@@ -35,7 +35,7 @@ select throws_ok($$insert into public.estates (region_id, slug, name) values ('1
 reset role;
 
 -- Owner: full write ----------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select lives_ok($$insert into public.estates (id, region_id, slug, name) values
   ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'cathkin-estate', 'Cathkin Estate')$$,

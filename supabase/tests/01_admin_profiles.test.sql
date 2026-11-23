@@ -72,7 +72,7 @@ select is_empty('select id from public.admin_profiles', 'outsider: sees no profi
 reset role;
 
 -- Owner ---------------------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select public.is_owner()), true, 'owner: is_owner() is true');
 select is((select count(*)::int from public.admin_profiles), 3, 'owner: sees all profiles');

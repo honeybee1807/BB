@@ -54,7 +54,7 @@ select throws_ok($$delete from storage.objects$$, null, null, 'team: direct dele
 select is_empty($$select name from storage.objects where bucket_id = 'uploads-tmp'$$, 'team: cannot read uploads-tmp');
 reset role;
 
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select throws_ok($$insert into storage.objects (bucket_id, name) values ('property-photos', 'owner.webp')$$, '42501', null,
   'owner: cannot upload directly either (server pipeline only)');

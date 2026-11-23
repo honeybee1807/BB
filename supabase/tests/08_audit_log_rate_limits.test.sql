@@ -15,12 +15,15 @@ insert into public.audit_log (actor_id, action, entity_type, entity_id) values
 -- Structure -----------------------------------------------------------------
 select ok((select relrowsecurity from pg_class where oid = 'public.audit_log'::regclass), 'audit_log has RLS enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.rate_limits'::regclass), 'rate_limits has RLS enabled');
-select is((select count(*)::int from pg_policies where tablename in ('audit_log', 'rate_limits')), 0,
-  'audit_log and rate_limits have no policies');
+select is((select count(*)::int from pg_policies where tablename = 'rate_limits'), 0, 'rate_limits has no policies');
+select results_eq($$select cmd::text from pg_policies where tablename = 'audit_log'$$, $$values ('SELECT')$$,
+  'audit_log has a single read policy');
 select ok(not has_table_privilege('anon', 'public.audit_log', 'select,insert,update,delete,truncate,references,trigger'),
   'anon has NO privileges on audit_log');
-select ok(not has_table_privilege('authenticated', 'public.audit_log', 'select,insert,update,delete,truncate,references,trigger'),
-  'authenticated has NO privileges on audit_log');
+select ok(not has_table_privilege('authenticated', 'public.audit_log', 'insert,update,delete,truncate,references,trigger'),
+  'authenticated cannot write audit_log');
+select ok(has_table_privilege('authenticated', 'public.audit_log', 'select'),
+  'authenticated has select on audit_log (filtered to the owner by RLS)');
 select ok(not has_table_privilege('anon', 'public.rate_limits', 'select,insert,update,delete,truncate,references,trigger'),
   'anon has NO privileges on rate_limits');
 select ok(not has_table_privilege('authenticated', 'public.rate_limits', 'select,insert,update,delete,truncate,references,trigger'),
@@ -52,18 +55,25 @@ reset role;
 -- Team member ---------------------------------------------------------------
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
-select throws_ok('select * from public.audit_log', '42501', null, 'team: cannot read audit_log');
+select is_empty('select id from public.audit_log', 'team: reads no audit rows');
 select throws_ok($$insert into public.audit_log (action) values ('x')$$, '42501', null, 'team: cannot write audit_log');
 select throws_ok($$delete from public.rate_limits$$, '42501', null, 'team: cannot clear rate_limits');
 reset role;
 
 -- Owner ---------------------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
-select throws_ok('select * from public.audit_log', '42501', null, 'owner: cannot read audit_log through the API role');
+select is((select count(*)::int from public.audit_log), 1, 'owner (aal2): can read the audit log');
+select throws_ok($$insert into public.audit_log (action) values ('owner.write')$$, '42501', null, 'owner: cannot write audit rows');
+select throws_ok($$delete from public.audit_log$$, '42501', null, 'owner: cannot delete audit rows');
 select throws_ok('select * from public.rate_limits', '42501', null, 'owner: cannot read rate_limits');
 select throws_ok($$select public.rate_limit_clear('login', repeat('a', 32))$$, '42501', null,
   'owner: cannot call rate_limit_clear');
+reset role;
+
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal1"}', true);
+set local role authenticated;
+select is_empty('select id from public.audit_log', 'owner without TOTP (aal1): reads no audit rows');
 reset role;
 
 -- Service role: rate limit behaviour ----------------------------------------

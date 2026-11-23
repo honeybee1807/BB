@@ -47,14 +47,14 @@ select lives_ok($$insert into public.property_photos (property_id, storage_path,
   'team: can add a photo');
 select isnt_empty($$update public.property_photos set alt_text = 'Mountain view', sort_order = 2
   where id = '40000000-0000-0000-0000-000000000002' returning id$$, 'team: can edit alt text and order');
-select is_empty($$delete from public.property_photos where id = '40000000-0000-0000-0000-000000000002' returning id$$,
-  'team: cannot delete photo rows');
+select isnt_empty($$delete from public.property_photos where id = '40000000-0000-0000-0000-000000000002' returning id$$,
+  'team: can delete a photo row');
 reset role;
 
 -- Owner ---------------------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
-select isnt_empty($$delete from public.property_photos where id = '40000000-0000-0000-0000-000000000002' returning id$$,
+select isnt_empty($$delete from public.property_photos where id = '40000000-0000-0000-0000-000000000003' returning id$$,
   'owner: can delete a photo row');
 reset role;
 

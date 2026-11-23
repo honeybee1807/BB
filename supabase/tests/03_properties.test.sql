@@ -76,7 +76,7 @@ select ok((select deleted_at is null from public.properties where slug = 'draft-
 select ok((select deleted_at is not null from public.properties where slug = 'deleted-home'), 'deleted-home is still deleted');
 
 -- Owner ---------------------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.properties), 4, 'owner: sees all properties, including soft-deleted');
 select isnt_empty($$update public.properties set deleted_at = now() where slug = 'team-home' returning id$$,

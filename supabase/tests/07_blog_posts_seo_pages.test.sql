@@ -57,7 +57,7 @@ select throws_ok($$delete from public.blog_posts where slug = 'team-post'$$, '42
 select throws_ok($$insert into public.seo_pages (path, title, description) values ('/team', 'T', 'D')$$, '42501', null,
   'team: cannot insert seo_pages');
 select is_empty($$update public.seo_pages set title = 'Changed' returning path$$, 'team: cannot update seo_pages');
-select is_empty($$delete from public.seo_pages returning path$$, 'team: cannot delete seo_pages');
+select throws_ok($$delete from public.seo_pages$$, '42501', null, 'team: cannot delete seo_pages (no grant)');
 reset role;
 select ok((select deleted_at is null from public.blog_posts where slug = 'team-post'), 'team-post is still not deleted');
 select ok((select deleted_at is not null from public.blog_posts where slug = 'deleted-post'), 'deleted-post is still deleted');
@@ -70,7 +70,7 @@ select throws_ok($$insert into public.blog_posts (slug, title) values ('o', 'O')
 reset role;
 
 -- Owner ---------------------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.blog_posts), 4, 'owner: sees all posts, including soft-deleted');
 select isnt_empty($$update public.blog_posts set deleted_at = now() where slug = 'team-post' returning id$$, 'owner: can soft delete');
@@ -79,7 +79,8 @@ select isnt_empty($$update public.seo_pages set description = 'New description' 
   'owner: can edit page SEO');
 select lives_ok($$insert into public.seo_pages (path, title, description) values ('/halal-guide', 'Guide', 'Desc')$$,
   'owner: can add a page SEO row');
-select isnt_empty($$delete from public.seo_pages where path = '/halal-guide' returning path$$, 'owner: can delete a page SEO row');
+select throws_ok($$delete from public.seo_pages where path = '/halal-guide'$$, '42501', null,
+  'owner: cannot delete page SEO rows (no DELETE grant)');
 reset role;
 
 -- Constraints ---------------------------------------------------------------

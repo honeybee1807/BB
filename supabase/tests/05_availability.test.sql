@@ -101,7 +101,7 @@ select throws_ok($$select public.block_dates('30000000-0000-0000-0000-0000000000
 reset role;
 
 -- Owner ---------------------------------------------------------------------
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is(public.block_dates('30000000-0000-0000-0000-000000000002', '2027-04-01', '2027-04-03'), 3,
   'owner: can block a range');
