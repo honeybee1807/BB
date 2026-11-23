@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import type { Db } from "./local-stack";
 
-/** RFC 4648 base32 decode (Supabase returns TOTP secrets in base32). */
+// Supabase returns TOTP secrets in base32.
 function base32Decode(input: string): Buffer {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   const clean = input.replace(/=+$/, "").replace(/\s/g, "").toUpperCase();
@@ -21,7 +21,7 @@ function base32Decode(input: string): Buffer {
   return Buffer.from(out);
 }
 
-/** RFC 6238 TOTP: SHA-1, 30-second step, 6 digits (Supabase defaults). Test use only. */
+// SHA-1, 30-second step, 6 digits, as Supabase uses.
 export function totpCode(secretBase32: string, now = Date.now()): string {
   const counter = Buffer.alloc(8);
   counter.writeBigUInt64BE(BigInt(Math.floor(now / 1000 / 30)));
@@ -35,7 +35,6 @@ export function totpCode(secretBase32: string, now = Date.now()): string {
   return String(binary % 1_000_000).padStart(6, "0");
 }
 
-/** Enrols a TOTP factor from the current (aal1) session and verifies it, raising the session to aal2. */
 export async function enrolAndVerifyTotp(c: Db): Promise<{ factorId: string; secret: string }> {
   const enrolled = await c.auth.mfa.enroll({ factorType: "totp" });
   if (enrolled.error) throw new Error(`TOTP enrolment failed: ${enrolled.error.message}`);

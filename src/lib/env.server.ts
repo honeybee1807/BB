@@ -1,9 +1,5 @@
 import "server-only";
 
-/**
- * Server-only configuration. Never import this from a Client Component.
- * The service role key is NOT here: it is read only in src/lib/supabase/admin.ts.
- */
 function optional(value: string | undefined): string | undefined {
   return value && value.trim() !== "" ? value.trim() : undefined;
 }
@@ -15,6 +11,7 @@ function list(value: string | undefined): string[] {
     .filter((s) => s.length > 0);
 }
 
+// The service role key is only read in src/lib/supabase/admin.ts.
 export const serverEnv = {
   get resendApiKey(): string | undefined {
     return optional(process.env.RESEND_API_KEY);

@@ -6,7 +6,6 @@ import { isSameOrigin } from "@/lib/security/origin";
 import { createClient } from "@/lib/supabase/server";
 import { logoutSchema } from "@/lib/validation/auth";
 
-/** POST /api/admin/logout: signs out this session and writes an audit row. */
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return responses.forbiddenOrigin();
   const body = (await readJsonBody(request)) ?? {};

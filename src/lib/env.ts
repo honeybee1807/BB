@@ -1,7 +1,4 @@
-/**
- * Public (browser-safe) configuration. NEXT_PUBLIC_ values are inlined at build time,
- * so each one is read with a literal `process.env.NAME` expression.
- */
+// NEXT_PUBLIC_ values are inlined at build time, so each is read with a literal process.env.NAME.
 function required(name: string, value: string | undefined): string {
   if (!value) throw new Error(`Missing environment variable ${name}`);
   return value;

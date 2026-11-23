@@ -1,8 +1,4 @@
-/**
- * Request metadata for rate limiting and security alerts.
- * On Vercel, x-real-ip / x-forwarded-for are set by the platform.
- * The raw IP is only ever used to compute a hash; it is never stored or logged.
- */
+// The raw IP is only used to compute a hash, never stored or logged.
 export function getClientIp(headers: Headers): string {
   const real = headers.get("x-real-ip")?.trim();
   if (real) return real;
@@ -11,7 +7,6 @@ export function getClientIp(headers: Headers): string {
   return "unknown";
 }
 
-/** Approximate location from Vercel's geo headers, for the login alert. */
 export function approximateLocation(headers: Headers): string {
   const decode = (v: string | null) => {
     if (!v) return "";
@@ -27,7 +22,6 @@ export function approximateLocation(headers: Headers): string {
   return parts.length > 0 ? parts.join(", ") : "Unknown location";
 }
 
-/** A short, human description of the browser and system from the User-Agent. */
 export function describeDevice(userAgent: string | null): string {
   if (!userAgent) return "Unknown device";
   const ua = userAgent;

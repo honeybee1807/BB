@@ -7,7 +7,6 @@ export function PageHeader({ title, description }: { title: string; description?
   );
 }
 
-/** Temporary content for sections that later build phases fill in. */
 export function ComingInPhase({ phase }: { phase: number }) {
   return (
     <div className="rounded-card bg-white p-6 text-muted shadow-sm ring-1 ring-line">

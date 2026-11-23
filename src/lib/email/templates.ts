@@ -1,7 +1,4 @@
-/**
- * Security email templates. Pure functions (no I/O) so they can be unit tested.
- * They NEVER include passwords, tokens, codes, raw IP addresses or guest messages.
- */
+// No passwords, tokens, codes, raw IPs or guest messages in these emails.
 export type EmailContent = { subject: string; text: string; html: string };
 
 export function escapeHtml(value: string): string {
@@ -13,7 +10,7 @@ export function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
-/** "23 Nov 2026, 21:05 SAST" */
+// e.g. 23 Nov 2026, 21:05 SAST
 export function formatSast(date: Date): string {
   const formatted = new Intl.DateTimeFormat("en-ZA", {
     timeZone: "Africa/Johannesburg",

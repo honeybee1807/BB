@@ -3,15 +3,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { publicEnv } from "@/lib/env";
 import type { Database } from "@/types/database";
 
-/**
- * SERVICE ROLE client. Bypasses Row Level Security.
- *
- * Allowed uses ONLY: public inquiry insert, rate limits, audit writes, storage
- * writes, user invitations and owner-only purges. Everything else uses the
- * signed-in user's client (src/lib/supabase/server.ts).
- *
- * This is the only module that may read SUPABASE_SERVICE_ROLE_KEY. Never log it.
- */
+// Bypasses RLS. Only for the inquiry insert, rate limits, audit writes, storage writes,
+// invitations and owner purges. Never log the key.
 let adminClient: SupabaseClient<Database> | undefined;
 
 export function getAdminClient(): SupabaseClient<Database> {

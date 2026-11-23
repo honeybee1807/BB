@@ -2,10 +2,7 @@ import "server-only";
 import type { Json } from "@/types/database";
 import { getAdminClient } from "@/lib/supabase/admin";
 
-/**
- * Audit actions. Keep this list in step with the code that writes them.
- * Metadata must never contain passwords, tokens, raw emails, raw IPs or guest data.
- */
+// Metadata must never hold passwords, tokens, raw emails, raw IPs or guest data.
 type AuditAction =
   | "login.ok"
   | "login.failed"
@@ -26,7 +23,7 @@ type AuditEntry = {
   ipHash?: string;
 };
 
-/** Writes an audit row with the service role. Never throws: auditing must not break the action. */
+// Never throws, a failed audit write must not break the action.
 export async function audit(entry: AuditEntry): Promise<void> {
   try {
     const { error } = await getAdminClient()

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// End-to-end tests run against `npm run dev` and the LOCAL Supabase stack only.
+// Runs against npm run dev and the local Supabase stack.
 const baseURL = "http://localhost:3000";
 
 export default defineConfig({
@@ -17,9 +17,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    // Route-level security tests: once, on desktop.
     { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
-    // UI tests also on a phone-sized viewport.
     { name: "mobile-chromium", use: { ...devices["Pixel 7"] }, testMatch: /.*\.ui\.spec\.ts/ },
   ],
   webServer: {

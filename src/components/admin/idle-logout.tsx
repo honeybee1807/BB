@@ -7,10 +7,7 @@ const IDLE_LIMIT_MS = 30 * 60 * 1000;
 const STORAGE_KEY = "bb-admin-last-activity";
 const EVENTS = ["pointerdown", "keydown", "scroll", "touchstart", "mousemove"] as const;
 
-/**
- * Signs the admin out after 30 minutes without activity. Activity in any open
- * admin tab counts (shared through localStorage, which holds only a timestamp).
- */
+// Activity in any admin tab counts. localStorage only holds a timestamp.
 export function IdleLogout() {
   useEffect(() => {
     let lastWrite = 0;
@@ -21,7 +18,7 @@ export function IdleLogout() {
       try {
         localStorage.setItem(STORAGE_KEY, String(now));
       } catch {
-        // storage unavailable: this tab's own timer still applies
+        // storage unavailable, this tab's own timer still applies
       }
     };
     const lastActivity = () => {

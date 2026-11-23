@@ -8,7 +8,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
-    // Unit tests arrive with the validation schemas (Phase 2 onwards).
     passWithNoTests: true,
   },
 });

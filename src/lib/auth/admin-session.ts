@@ -14,7 +14,6 @@ type AdminIdentity = {
   email: string;
   fullName: string;
   role: AdminRole;
-  /** The user has a verified TOTP factor. */
   hasVerifiedFactor: boolean;
 };
 
@@ -24,12 +23,7 @@ type SessionState =
   | { status: "mfa_required"; identity: AdminIdentity }
   | { status: "ok"; identity: AdminIdentity };
 
-/**
- * Reads the session, the caller's own admin profile and the assurance level.
- * Request-scoped only (React cache): nothing is cached across requests.
- * connection() marks this as request-time work, so Next never tries to
- * prerender it (Supabase reads the current time to check token expiry).
- */
+// connection() keeps this request-time. Supabase reads the clock to check token expiry.
 export const getSessionState = cache(async (): Promise<SessionState> => {
   await connection();
   const supabase = await createClient();
@@ -60,10 +54,7 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
   return { status: "ok", identity };
 });
 
-/**
- * For admin pages. Non-admins get the same blank 404 as a missing page;
- * an admin who still owes two-factor is sent to /admin/mfa.
- */
+// Non-admins get the same 404 as a missing page.
 export async function requireAdminPage(options: { ownerOnly?: boolean } = {}): Promise<AdminIdentity> {
   const state = await getSessionState();
   if (state.status === "signed_out" || state.status === "not_admin") notFound();
@@ -74,10 +65,7 @@ export async function requireAdminPage(options: { ownerOnly?: boolean } = {}): P
 
 type ApiAuth = { identity: AdminIdentity; supabase: UserClient };
 
-/**
- * For the two-factor routes only: an active admin with any assurance level
- * (enrolment and verification happen at aal1 by definition).
- */
+// The two-factor routes run before aal2, so any level is allowed here.
 export async function requireActiveAdminAnyLevel(): Promise<ApiAuth | Response> {
   const state = await getSessionState();
   if (state.status === "signed_out") return Response.json({ ok: false, error: "Please sign in again." }, { status: 401 });

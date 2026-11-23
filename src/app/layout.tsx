@@ -8,7 +8,6 @@ const inter = Inter({
   display: "swap",
 });
 
-// PROVISIONAL: confirm Cormorant Garamond vs Playfair Display against the mockups.
 const heading = Cormorant_Garamond({
   variable: "--font-heading",
   subsets: ["latin"],

@@ -5,14 +5,12 @@ import { request, type APIRequestContext } from "@playwright/test";
 import { hashIdentifier } from "../src/lib/security/hash";
 import { client, readLocalStack } from "../tests/api/local-stack";
 
-// The tests compute rate-limit and audit hashes for cleanup, so they need the same
-// IP_HASH_SECRET as the dev server. Load only that one value from .env.local.
+// Cleanup needs the same hash secret as the dev server.
 if (!process.env.IP_HASH_SECRET) {
   const secret = parseEnv(readFileSync(".env.local", "utf8")).IP_HASH_SECRET;
   if (secret) process.env.IP_HASH_SECRET = secret;
 }
 
-/** Test-only helpers. Service role is used for fixtures and cleanup, never by the app under test. */
 export const stack = readLocalStack();
 export const admin = client(stack.url, stack.serviceKey);
 const BASE_URL = "http://localhost:3000";
@@ -20,7 +18,7 @@ const BASE_URL = "http://localhost:3000";
 export const run = randomBytes(4).toString("hex");
 export const password = `${randomBytes(18).toString("base64url")}Aa1!`;
 
-/** A unique fake client IP per test, so IP rate limits do not leak between tests. */
+// a fresh IP per test so IP limits don't carry over
 export function uniqueIp(): string {
   const b = randomBytes(3);
   return `10.${b[0]}.${b[1]}.${b[2]}`;
@@ -54,7 +52,6 @@ export function trackEmail(email: string) {
   usedEmails.push(email);
 }
 
-/** An API client that behaves like a same-origin browser from a given IP. Cookies persist within it. */
 export async function apiAs(ip = uniqueIp()): Promise<APIRequestContext> {
   usedIps.push(ip);
   return request.newContext({ baseURL: BASE_URL, extraHTTPHeaders: { origin: BASE_URL, "x-forwarded-for": ip } });
@@ -76,7 +73,6 @@ export function emailHashPrefix(email: string): string {
   return hashIdentifier("email", email).slice(0, 16);
 }
 
-/** Removes test users, their rate-limit rows and audit rows. */
 export async function cleanup(): Promise<void> {
   const keys = [
     ...usedEmails.map((e) => hashIdentifier("email", e)),

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-/** Signs out through the server route (which audits it), then goes to the login page. */
 export async function signOut(reason: "user" | "idle" = "user"): Promise<void> {
   try {
     await fetch("/api/admin/logout", {

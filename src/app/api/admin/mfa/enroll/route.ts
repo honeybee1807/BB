@@ -4,13 +4,7 @@ import { audit } from "@/lib/security/audit";
 import { isSameOrigin } from "@/lib/security/origin";
 import { mfaEnrolSchema } from "@/lib/validation/auth";
 
-/**
- * POST /api/admin/mfa/enroll
- * Starts TOTP enrolment for the signed-in admin (owner or team member, any
- * assurance level: no owner rights are needed). Refused if a verified factor
- * already exists; leftover unverified factors are removed first.
- * Returns the QR code and the setup key, once, with no-store.
- */
+// Any assurance level, so the owner can enrol before reaching aal2.
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return responses.forbiddenOrigin();
   if (!mfaEnrolSchema.safeParse((await readJsonBody(request)) ?? {}).success) return responses.badRequest();

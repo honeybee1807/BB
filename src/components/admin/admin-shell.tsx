@@ -24,7 +24,6 @@ type ShellUser = { fullName: string; role: "owner" | "team_member" };
 
 type NavItem = { href: string; label: string; icon: LucideIcon; ownerOnly?: boolean };
 
-// Phase 1 scope: no "Owners" item (owner onboarding is Phase 2).
 const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/inquiries", label: "Inquiries", icon: Inbox },
@@ -56,7 +55,6 @@ export function AdminShell({ user, children }: { user: ShellUser; children: Reac
         Skip to content
       </a>
 
-      {/* Mobile top bar */}
       <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between bg-navy px-4 text-white lg:hidden">
         <span className="font-serif text-lg uppercase tracking-display">Bargain Breaks</span>
         <button

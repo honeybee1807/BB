@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Shared by the login form (client) and the login route (server). Unknown keys are rejected. */
+// shared by the login form and the login route
 export const loginSchema = z.strictObject({
   email: z.email({ error: "Enter a valid email address." }).max(254),
   password: z.string().min(1, { error: "Enter your password." }).max(200),

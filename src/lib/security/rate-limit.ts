@@ -1,13 +1,11 @@
 import "server-only";
 import { getAdminClient } from "@/lib/supabase/admin";
 
-/** Rate-limit buckets and their windows. Keys are always hashes (see hash.ts). */
 export const LOGIN_FAILURE_LIMIT = { max: 5, windowSeconds: 15 * 60 } as const;
 export const MFA_FAILURE_LIMIT = { max: 5, windowSeconds: 15 * 60 } as const;
 
 type RateLimitBucket = "login_fail_email" | "login_fail_ip" | "mfa_fail_user";
 
-/** Events for a key inside the window. Uses the service role (rate_limits is server-only). */
 export async function countEvents(bucket: RateLimitBucket, keyHash: string, windowSeconds: number): Promise<number> {
   const { data, error } = await getAdminClient().rpc("rate_limit_count", {
     p_bucket: bucket,

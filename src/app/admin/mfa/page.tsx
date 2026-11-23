@@ -5,15 +5,10 @@ import { TwoFactor } from "@/components/admin/two-factor";
 import { getSessionState } from "@/lib/auth/admin-session";
 import { createClient } from "@/lib/supabase/server";
 
-// Request-time only: reads the session; never prerendered.
 export const instant = false;
 
 export const metadata: Metadata = { title: "Two-factor sign-in" };
 
-/**
- * Two-factor gate. Reached after the password step when the account needs aal2:
- * the owner always (enrolment first if no factor yet), a team member once enrolled.
- */
 export default async function MfaPage() {
   const state = await getSessionState();
   if (state.status === "signed_out" || state.status === "not_admin") notFound();

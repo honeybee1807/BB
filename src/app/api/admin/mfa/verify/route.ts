@@ -12,11 +12,6 @@ import { mfaVerifySchema } from "@/lib/validation/auth";
 
 const LOCKED = "Too many incorrect codes. Please wait 15 minutes and try again.";
 
-/**
- * POST /api/admin/mfa/verify
- * Verifies a TOTP code: completes enrolment for a new factor, or raises the
- * session to aal2 at sign-in. Rate limited per user (5 failures / 15 minutes).
- */
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return responses.forbiddenOrigin();
   const parsed = mfaVerifySchema.safeParse(await readJsonBody(request));
@@ -38,7 +33,7 @@ export async function POST(request: Request) {
   }
   if (failures >= max) return json({ ok: false, error: LOCKED, locked: true }, 429);
 
-  // The factor must belong to this user (never trust an id from the browser).
+  // never trust a factor id from the browser
   const { data: factors } = await supabase.auth.mfa.listFactors();
   const factor = factors?.all.find((f) => f.id === parsed.data.factorId && f.factor_type === "totp");
   if (!factor) return responses.badRequest("Two-factor setup has expired. Please start again.");

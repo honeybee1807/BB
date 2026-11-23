@@ -14,11 +14,7 @@ import { loginSchema } from "@/lib/validation/auth";
 const INVALID = "Email or password is incorrect.";
 const LOCKED = "Too many sign-in attempts. Please wait 15 minutes and try again.";
 
-/**
- * POST /api/admin/login (guide section 8.3)
- * Neutral errors never reveal whether an email exists. While locked out, the
- * password is not checked at all.
- */
+// Same error whether or not the email exists. While locked, the password isn't checked.
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return responses.forbiddenOrigin();
 
@@ -54,7 +50,7 @@ export async function POST(request: Request) {
   }
 
   if (error || !data.user || !profile || !profile.is_active) {
-    // A valid password for a user who is not an active admin is treated exactly like a wrong one.
+    // a valid password for a non-admin counts as a wrong one
     if (data?.user) await supabase.auth.signOut({ scope: "local" });
     try {
       await Promise.all([recordEvent("login_fail_email", emailKey), recordEvent("login_fail_ip", ipKey)]);
@@ -78,7 +74,7 @@ export async function POST(request: Request) {
     return json({ ok: false, error: INVALID }, 401);
   }
 
-  // Success: forget this email's failures (the IP counter keeps its window).
+  // the IP counter keeps its window
   try {
     await clearEvents("login_fail_email", emailKey);
   } catch {

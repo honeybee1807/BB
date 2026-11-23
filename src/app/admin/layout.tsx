@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-// Admin pages read the session on every request and are never prerendered or cached.
+// admin pages read the session on every request
 export const instant = false;
 
 export const metadata: Metadata = {

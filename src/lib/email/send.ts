@@ -7,10 +7,7 @@ type SendResult = { sent: boolean };
 
 let resend: Resend | undefined;
 
-/**
- * Sends one email through Resend. Never throws, and never logs recipients or content.
- * Without RESEND_API_KEY / EMAIL_FROM (local development) the email is skipped.
- */
+// Never throws or logs recipients. Skips sending when Resend isn't configured.
 async function sendEmail(kind: string, to: string[], content: EmailContent, replyTo?: string): Promise<SendResult> {
   const apiKey = serverEnv.resendApiKey;
   const from = serverEnv.emailFrom;
@@ -39,7 +36,6 @@ async function sendEmail(kind: string, to: string[], content: EmailContent, repl
   }
 }
 
-/** Security alerts go to SECURITY_ALERT_TO. */
 export function sendSecurityAlert(kind: string, content: EmailContent): Promise<SendResult> {
   return sendEmail(kind, serverEnv.securityAlertTo, content);
 }
