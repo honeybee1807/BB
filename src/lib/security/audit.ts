@@ -6,7 +6,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
  * Audit actions. Keep this list in step with the code that writes them.
  * Metadata must never contain passwords, tokens, raw emails, raw IPs or guest data.
  */
-export type AuditAction =
+type AuditAction =
   | "login.ok"
   | "login.failed"
   | "login.lockout"
@@ -17,7 +17,7 @@ export type AuditAction =
   | "mfa.failed"
   | "mfa.lockout";
 
-export type AuditEntry = {
+type AuditEntry = {
   actorId: string | null;
   action: AuditAction;
   entityType?: string;

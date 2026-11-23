@@ -3,7 +3,7 @@ import { Resend } from "resend";
 import { serverEnv } from "@/lib/env.server";
 import type { EmailContent } from "./templates";
 
-export type SendResult = { sent: boolean };
+type SendResult = { sent: boolean };
 
 let resend: Resend | undefined;
 
@@ -11,7 +11,7 @@ let resend: Resend | undefined;
  * Sends one email through Resend. Never throws, and never logs recipients or content.
  * Without RESEND_API_KEY / EMAIL_FROM (local development) the email is skipped.
  */
-export async function sendEmail(kind: string, to: string[], content: EmailContent, replyTo?: string): Promise<SendResult> {
+async function sendEmail(kind: string, to: string[], content: EmailContent, replyTo?: string): Promise<SendResult> {
   const apiKey = serverEnv.resendApiKey;
   const from = serverEnv.emailFrom;
   if (!apiKey || !from || to.length === 0) {

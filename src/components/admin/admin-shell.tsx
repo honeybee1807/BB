@@ -20,7 +20,7 @@ import { useState } from "react";
 import { IdleLogout } from "./idle-logout";
 import { SignOutButton } from "./sign-out-button";
 
-export type ShellUser = { fullName: string; role: "owner" | "team_member" };
+type ShellUser = { fullName: string; role: "owner" | "team_member" };
 
 type NavItem = { href: string; label: string; icon: LucideIcon; ownerOnly?: boolean };
 

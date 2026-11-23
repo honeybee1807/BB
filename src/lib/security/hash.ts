@@ -10,7 +10,7 @@ import { createHmac } from "node:crypto";
  * Rotating IP_HASH_SECRET only resets rate-limit windows and breaks the link
  * between old and new audit hashes; nothing else depends on it.
  */
-export type HashKind = "ip" | "email" | "user";
+type HashKind = "ip" | "email" | "user";
 
 const MIN_SECRET_LENGTH = 32;
 

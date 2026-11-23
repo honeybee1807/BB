@@ -45,8 +45,3 @@ export async function enrolAndVerifyTotp(c: Db): Promise<{ factorId: string; sec
   return { factorId, secret: totp.secret };
 }
 
-/** Raises an existing aal1 session to aal2 with an already-enrolled factor. */
-export async function verifyTotp(c: Db, factorId: string, secret: string): Promise<void> {
-  const verified = await c.auth.mfa.challengeAndVerify({ factorId, code: totpCode(secret) });
-  if (verified.error) throw new Error(`TOTP verification failed: ${verified.error.message}`);
-}

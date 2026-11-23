@@ -9,8 +9,6 @@ export function json(body: unknown, status = 200): Response {
 export const responses = {
   forbiddenOrigin: () => json({ ok: false, error: "Request blocked." }, 403),
   badRequest: (message = "Please check the form and try again.") => json({ ok: false, error: message }, 400),
-  unauthorised: () => json({ ok: false, error: "Please sign in again." }, 401),
-  notFound: () => json({ ok: false, error: "Not found." }, 404),
   serverError: () => json({ ok: false, error: "Something went wrong. Please try again." }, 500),
 };
 

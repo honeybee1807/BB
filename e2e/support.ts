@@ -15,7 +15,7 @@ if (!process.env.IP_HASH_SECRET) {
 /** Test-only helpers. Service role is used for fixtures and cleanup, never by the app under test. */
 export const stack = readLocalStack();
 export const admin = client(stack.url, stack.serviceKey);
-export const BASE_URL = "http://localhost:3000";
+const BASE_URL = "http://localhost:3000";
 
 export const run = randomBytes(4).toString("hex");
 export const password = `${randomBytes(18).toString("base64url")}Aa1!`;

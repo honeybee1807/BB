@@ -13,7 +13,6 @@ export const mfaVerifySchema = z.strictObject({
   factorId: z.uuid(),
   code: z.string().regex(/^\d{6}$/, { error: "Enter the 6-digit code from your authenticator app." }),
 });
-export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;
 
 export const logoutSchema = z.strictObject({
   reason: z.enum(["user", "idle"]).optional(),

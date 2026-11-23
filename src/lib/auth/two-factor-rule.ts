@@ -1,4 +1,4 @@
-export type AdminRoleName = "owner" | "team_member";
+type AdminRoleName = "owner" | "team_member";
 
 /**
  * Two-factor rule (mirrors is_owner()/is_admin() in the database):

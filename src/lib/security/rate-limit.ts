@@ -5,7 +5,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 export const LOGIN_FAILURE_LIMIT = { max: 5, windowSeconds: 15 * 60 } as const;
 export const MFA_FAILURE_LIMIT = { max: 5, windowSeconds: 15 * 60 } as const;
 
-export type RateLimitBucket = "login_fail_email" | "login_fail_ip" | "mfa_fail_user";
+type RateLimitBucket = "login_fail_email" | "login_fail_ip" | "mfa_fail_user";
 
 /** Events for a key inside the window. Uses the service role (rate_limits is server-only). */
 export async function countEvents(bucket: RateLimitBucket, keyHash: string, windowSeconds: number): Promise<number> {
