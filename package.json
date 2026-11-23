@@ -22,7 +22,8 @@
     "db:test": "supabase test db",
     "db:types": "supabase gen types typescript --local > src/types/database.ts",
     "secrets:scan": "gitleaks git --redact --no-banner .",
-    "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner ."
+    "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner .",
+    "test:api": "vitest run --config vitest.api.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.8",
