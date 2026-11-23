@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { addDays, todayInSast } from "../src/lib/format";
+import { hashIdentifier } from "../src/lib/security/hash";
 import { client } from "../tests/api/local-stack";
-import { admin, apiAs, cleanup, run, stack } from "./support";
+import { admin, apiAs, cleanup, run, stack, uniqueIp } from "./support";
 
 test.describe.configure({ mode: "serial" });
 
@@ -100,8 +101,16 @@ test("drops an unknown property but keeps the inquiry", async () => {
   expect(await storedCount("ghost")).toBe(1);
 });
 
-test("limits one address to five inquiries an hour", async () => {
+test("rejects a missing security check token", async () => {
   const api = await apiAs();
+  const res = await api.post("/api/inquiries", { data: inquiry("notoken", { turnstileToken: "" }) });
+  expect(res.status()).toBe(400);
+  expect(await storedCount("notoken")).toBe(0);
+});
+
+test("limits one address to five inquiries an hour", async () => {
+  const ip = uniqueIp();
+  const api = await apiAs(ip);
   for (let i = 0; i < 5; i++) {
     const res = await api.post("/api/inquiries", { data: inquiry("limit") });
     expect(res.status()).toBe(200);
@@ -109,4 +118,17 @@ test("limits one address to five inquiries an hour", async () => {
   const blocked = await api.post("/api/inquiries", { data: inquiry("limit") });
   expect(blocked.status()).toBe(429);
   expect(await storedCount("limit")).toBe(5);
+
+  // keyed by the HMAC of the address, never the address itself
+  const { data } = await admin
+    .from("rate_limits")
+    .select("bucket, key_hash")
+    .like("bucket", "inquiry_%")
+    .eq("key_hash", hashIdentifier("ip", ip));
+  expect(data?.map((r) => r.bucket).sort()).toEqual([
+    ...Array(5).fill("inquiry_ip_day"),
+    ...Array(5).fill("inquiry_ip_hour"),
+  ]);
+  const { count } = await admin.from("rate_limits").select("id", { count: "exact", head: true }).eq("key_hash", ip);
+  expect(count).toBe(0);
 });
