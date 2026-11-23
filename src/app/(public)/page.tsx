@@ -41,14 +41,12 @@ function Hero() {
             id="hero-heading"
             className="mt-5 font-serif text-[clamp(2.6rem,1.2rem+4.4vw,4.6rem)] leading-[0.98] uppercase"
           >
-            Coast to
-            <br />
+            Coast to <br />
             mountain.
           </h1>
           <div aria-hidden className="mt-7 h-0.5 w-14 bg-gold" />
           <p className="mt-6 font-serif text-xl leading-snug sm:text-[25px]">
-            Exceptional stays.
-            <br />
+            Exceptional stays. <br />
             Cherished memories.
           </p>
           <Link

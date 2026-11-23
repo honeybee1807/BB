@@ -57,8 +57,7 @@ function Brand() {
     <div className="flex items-center gap-3">
       <House aria-hidden strokeWidth={1.5} className="size-7 shrink-0 text-white/90" />
       <p className="font-serif text-lg leading-tight font-semibold tracking-[0.12em] text-white uppercase">
-        Bargain
-        <br />
+        Bargain <br />
         Breaks
       </p>
     </div>

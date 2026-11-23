@@ -12,8 +12,7 @@ export function HalalBadge({ className = "" }: { className?: string }) {
     >
       <Moon aria-hidden strokeWidth={1.5} className="size-3.5 fill-white" />
       <span>
-        Halal
-        <br />
+        Halal <br />
         accommodation
       </span>
     </span>
