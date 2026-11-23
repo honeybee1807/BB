@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+ * Bargain Breaks design tokens.
+ *
+ * PROVISIONAL COLOURS: the brand values below are the approximations from the
+ * project brief. They will be replaced with values sampled from the approved
+ * mockups (docs/design/*.png). Change values only here; components use the
+ * Tailwind token names (bg-navy, text-teal, rounded-card, ...), never raw hex.
+ */
+:root {
+  /* Brand */
+  --bb-navy: #0e2a3d; /* PROVISIONAL */
+  --bb-navy-deep: #0a1f2d; /* PROVISIONAL: darker navy for sidebar / footer */
+  --bb-teal: #17605a; /* PROVISIONAL */
+  --bb-teal-light: #d4e8e5; /* PROVISIONAL: "In progress" pill, active fills */
+  --bb-sand: #e6d3ae; /* PROVISIONAL */
+  --bb-sand-light: #f4ecdc; /* PROVISIONAL: soft section backgrounds */
+
+  /* Neutrals */
+  --bb-ink: #1b2730; /* body text on light backgrounds */
+  --bb-muted: #5b6770; /* secondary text, AA on white and on --bb-paper */
+  --bb-paper: #fbf9f5; /* public page background */
+  --bb-white: #ffffff;
+  --bb-admin-bg: #f3f4f6; /* admin page background (light grey) */
+  --bb-line: #e3e1dc; /* hairlines and borders */
+
+  /* Availability (never shown by colour alone: always paired with a label or pattern) */
+  --bb-open: var(--bb-teal-light);
+  --bb-blocked: var(--bb-navy);
+
+  /* Feedback */
+  --bb-danger: #a3261f;
+  --bb-focus: #17605a; /* PROVISIONAL: follows teal */
+}
+
+@theme inline {
+  --color-navy: var(--bb-navy);
+  --color-navy-deep: var(--bb-navy-deep);
+  --color-teal: var(--bb-teal);
+  --color-teal-light: var(--bb-teal-light);
+  --color-sand: var(--bb-sand);
+  --color-sand-light: var(--bb-sand-light);
+  --color-ink: var(--bb-ink);
+  --color-muted: var(--bb-muted);
+  --color-paper: var(--bb-paper);
+  --color-admin-bg: var(--bb-admin-bg);
+  --color-line: var(--bb-line);
+  --color-open: var(--bb-open);
+  --color-blocked: var(--bb-blocked);
+  --color-danger: var(--bb-danger);
+  --color-focus: var(--bb-focus);
+
+  /* Fonts are loaded with next/font in src/app/layout.tsx */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-heading), ui-serif, Georgia, serif;
+
+  /* Public site: near-square corners. Admin: soft 12px cards. */
+  --radius-public: 2px;
+  --radius-card: 12px;
+  --radius-pill: 9999px;
+
+  /* Wide tracking for uppercase hero and section titles */
+  --tracking-display: 0.18em;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bb-paper);
+  color: var(--bb-ink);
+  font-family: var(--font-sans);
+}
+
+/* Visible keyboard focus everywhere (WCAG 2.4.7) */
+:focus-visible {
+  outline: 2px solid var(--bb-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

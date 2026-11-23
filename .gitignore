@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------
+# SECRETS: this repository is PUBLIC. Nothing secret may be committed.
+# ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa*
+id_ed25519*
+*.secret
+secrets.*
+credentials*.json
+service-account*.json
+
+# Database dumps and backups (may contain guest data)
+*.dump
+*.dump.gpg
+*.sql.gz
+*.backup
+*.bak
+dump*.sql
+backup*.sql
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+supabase/.env.*
+
+# Private project documents (client guide and mockups): kept local only
+/docs/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# next.js
+/.next/
+/out/
+/build
+
+# misc
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
