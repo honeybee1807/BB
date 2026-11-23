@@ -73,6 +73,7 @@ scripts, no ORM, no Express, no Pages Router, no CSS-in-JS, no UI kits.
 - `docs/` (guide and mockups) is local only and gitignored. Never commit it.
 - Do not overwrite or remove README.md without asking.
 - Before saying a task is done: `npm run check` (typecheck, lint, unit tests), plus
-  `npm run db:test` and `npm run test:api` (local stack) when SQL changed. Show the results.
+  `npm run db:test` and `npm run test:api` (local stack) when SQL changed, and
+  `npm run test:e2e` when routes or pages changed. Show the results.
 - Commit after each working step with a clear message. Build phase by phase and stop for
   review at the end of each phase.
