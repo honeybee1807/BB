@@ -169,3 +169,8 @@ export async function getSeoPage(path: string): Promise<SeoPage | null> {
   if (error) failed("page details");
   return data;
 }
+
+// Cache Components needs at least one param at build time; the placeholder renders a 404.
+export function staticParams<T extends Record<string, string>>(params: T[], placeholder: T): T[] {
+  return params.length > 0 ? params : [placeholder];
+}
