@@ -16,7 +16,11 @@ export function guessLocation(headers: Headers): string {
       return v;
     }
   };
-  const parts = [decode(headers.get("x-vercel-ip-city")), decode(headers.get("x-vercel-ip-country-region")), decode(headers.get("x-vercel-ip-country"))]
+  const parts = [
+    decode(headers.get("x-vercel-ip-city")),
+    decode(headers.get("x-vercel-ip-country-region")),
+    decode(headers.get("x-vercel-ip-country")),
+  ]
     .map((p) => p.trim())
     .filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : "Unknown location";

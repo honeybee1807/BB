@@ -45,7 +45,11 @@ export async function POST(request: Request) {
 
   let profile: { full_name: string; role: "owner" | "team_member"; is_active: boolean } | null = null;
   if (!error && data.user) {
-    const result = await supabase.from("admin_profiles").select("full_name, role, is_active").eq("id", data.user.id).maybeSingle();
+    const result = await supabase
+      .from("admin_profiles")
+      .select("full_name, role, is_active")
+      .eq("id", data.user.id)
+      .maybeSingle();
     profile = result.data;
   }
 
@@ -67,8 +71,18 @@ export async function POST(request: Request) {
     const lockedNow = emailFailures + 1 === max || ipFailures + 1 === max;
     if (lockedNow) {
       const attempts = Math.max(emailFailures, ipFailures) + 1;
-      await audit({ actorId: null, action: "login.lockout", metadata: { email_hash: emailKey.slice(0, 16), attempts }, ipHash: ipKey });
-      after(() => sendSecurityAlert("lockout", lockoutAlertEmail({ targetEmail: email, attempts, when: new Date(), reason: "password" })));
+      await audit({
+        actorId: null,
+        action: "login.lockout",
+        metadata: { email_hash: emailKey.slice(0, 16), attempts },
+        ipHash: ipKey,
+      });
+      after(() =>
+        sendSecurityAlert(
+          "lockout",
+          lockoutAlertEmail({ targetEmail: email, attempts, when: new Date(), reason: "password" }),
+        ),
+      );
       return json({ ok: false, error: LOCKED, locked: true }, 429);
     }
     return json({ ok: false, error: INVALID }, 401);
@@ -80,14 +94,24 @@ export async function POST(request: Request) {
   } catch {
     // not fatal
   }
-  await audit({ actorId: data.user.id, action: "login.ok", entityType: "admin", entityId: data.user.id, ipHash: ipKey });
+  await audit({
+    actorId: data.user.id,
+    action: "login.ok",
+    entityType: "admin",
+    entityId: data.user.id,
+    ipHash: ipKey,
+  });
 
   const fullName = profile.full_name;
   const location = guessLocation(request.headers);
   const device = deviceName(request.headers.get("user-agent"));
-  after(() => sendSecurityAlert("login", loginAlertEmail({ name: fullName, email, when: new Date(), location, device })));
+  after(() =>
+    sendSecurityAlert("login", loginAlertEmail({ name: fullName, email, when: new Date(), location, device })),
+  );
 
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  const next = needsTwoFactor(profile.role, aal?.currentLevel ?? null, aal?.nextLevel ?? null) ? "/admin/mfa" : "/admin";
+  const next = needsTwoFactor(profile.role, aal?.currentLevel ?? null, aal?.nextLevel ?? null)
+    ? "/admin/mfa"
+    : "/admin";
   return json({ ok: true, next });
 }

@@ -68,7 +68,9 @@ export function AdminShell({ user, children }: { user: ShellUser; children: Reac
           <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
         </button>
       </div>
-      {open && <div className="fixed inset-0 z-30 bg-navy-deep/40 lg:hidden" aria-hidden onClick={() => setOpen(false)} />}
+      {open && (
+        <div className="fixed inset-0 z-30 bg-navy-deep/40 lg:hidden" aria-hidden onClick={() => setOpen(false)} />
+      )}
 
       <aside
         id="admin-sidebar"
@@ -106,7 +108,11 @@ export function AdminShell({ user, children }: { user: ShellUser; children: Reac
           <p className="font-medium">{user.fullName}</p>
           <p className="text-xs text-white/60">{user.role === "owner" ? "Owner" : "Team member"}</p>
           <div className="mt-3 flex flex-col items-start gap-2">
-            <Link href="/admin/account" onClick={() => setOpen(false)} className="inline-flex items-center gap-2 text-white/80 hover:text-white">
+            <Link
+              href="/admin/account"
+              onClick={() => setOpen(false)}
+              className="inline-flex items-center gap-2 text-white/80 hover:text-white"
+            >
               <ShieldCheck aria-hidden className="size-4" />
               Account security
             </Link>

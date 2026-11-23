@@ -41,7 +41,13 @@ function render(subject: string, heading: string, rows: Array<[string, string]>,
   return { subject, text, html };
 }
 
-export function loginAlertEmail(input: { name: string; email: string; when: Date; location: string; device: string }): EmailContent {
+export function loginAlertEmail(input: {
+  name: string;
+  email: string;
+  when: Date;
+  location: string;
+  device: string;
+}): EmailContent {
   return render(
     "Bargain Breaks admin sign-in",
     "A Bargain Breaks admin account just signed in",
@@ -58,7 +64,12 @@ export function loginAlertEmail(input: { name: string; email: string; when: Date
   );
 }
 
-export function lockoutAlertEmail(input: { targetEmail: string; attempts: number; when: Date; reason: "password" | "two-factor" }): EmailContent {
+export function lockoutAlertEmail(input: {
+  targetEmail: string;
+  attempts: number;
+  when: Date;
+  reason: "password" | "two-factor";
+}): EmailContent {
   const what = input.reason === "password" ? "failed sign-in attempts" : "failed two-factor codes";
   return render(
     "Bargain Breaks admin sign-in locked",

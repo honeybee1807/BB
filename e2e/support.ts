@@ -29,7 +29,10 @@ const created: TestUser[] = [];
 const usedEmails: string[] = [];
 const usedIps: string[] = [];
 
-export async function createUser(label: string, profile?: { role: "owner" | "team_member"; isActive?: boolean; fullName?: string }): Promise<TestUser> {
+export async function createUser(
+  label: string,
+  profile?: { role: "owner" | "team_member"; isActive?: boolean; fullName?: string },
+): Promise<TestUser> {
   const email = `e2e-${label}-${run}@test.local`;
   const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (error || !data.user) throw new Error(`create user ${label}: ${error?.message ?? "no user"}`);

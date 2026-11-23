@@ -17,7 +17,11 @@ export async function createClient() {
       setAll(cookiesToSet) {
         try {
           for (const { name, value, options } of cookiesToSet) {
-            cookieStore.set(name, value, { ...options, ...authCookieOptions, maxAge: options.maxAge === 0 ? 0 : authCookieOptions.maxAge });
+            cookieStore.set(name, value, {
+              ...options,
+              ...authCookieOptions,
+              maxAge: options.maxAge === 0 ? 0 : authCookieOptions.maxAge,
+            });
           }
         } catch {
           // read-only in Server Components, src/proxy.ts refreshes the session instead

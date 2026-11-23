@@ -63,7 +63,7 @@ reset role;
 -- Owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
-select is((select count(*)::int from public.audit_log), 1, 'owner (aal2): can read the audit log');
+select is((select count(*)::int from public.audit_log where created_at = now()), 1, 'owner (aal2): can read the audit log');
 select throws_ok($$insert into public.audit_log (action) values ('owner.write')$$, '42501', null, 'owner: cannot write audit rows');
 select throws_ok($$delete from public.audit_log$$, '42501', null, 'owner: cannot delete audit rows');
 select throws_ok('select * from public.rate_limits', '42501', null, 'owner: cannot read rate_limits');
@@ -80,7 +80,7 @@ reset role;
 set local role service_role;
 select lives_ok($$insert into public.audit_log (action, metadata) values ('property.soft_delete', '{"property_id":"x"}')$$,
   'service_role: can write audit rows');
-select is((select count(*)::int from public.audit_log), 2, 'service_role: can read audit rows');
+select is((select count(*)::int from public.audit_log where created_at = now()), 2, 'service_role: can read audit rows');
 select is((select bool_and(public.rate_limit_hit('inquiry_hour', repeat('b', 32), 3600, 5)) from generate_series(1, 5)),
   true, 'service_role: first 5 hits in the window are allowed');
 select is(public.rate_limit_hit('inquiry_hour', repeat('b', 32), 3600, 5), false, 'service_role: the 6th hit is refused');

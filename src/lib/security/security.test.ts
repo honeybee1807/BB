@@ -74,12 +74,18 @@ describe("client info", () => {
     expect(getClientIp(new Headers())).toBe("unknown");
   });
   it("builds an approximate location from Vercel geo headers", () => {
-    expect(guessLocation(new Headers({ "x-vercel-ip-city": "Cape%20Town", "x-vercel-ip-country": "ZA" }))).toBe("Cape Town, ZA");
+    expect(guessLocation(new Headers({ "x-vercel-ip-city": "Cape%20Town", "x-vercel-ip-country": "ZA" }))).toBe(
+      "Cape Town, ZA",
+    );
     expect(guessLocation(new Headers())).toBe("Unknown location");
   });
   it("describes common devices", () => {
-    expect(deviceName("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit Version/18.0 Mobile Safari/604.1")).toBe("Safari on iOS");
-    expect(deviceName("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36 Edg/140.0")).toBe("Edge on Windows");
+    expect(
+      deviceName("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit Version/18.0 Mobile Safari/604.1"),
+    ).toBe("Safari on iOS");
+    expect(
+      deviceName("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36 Edg/140.0"),
+    ).toBe("Edge on Windows");
     expect(deviceName(null)).toBe("Unknown device");
   });
 });

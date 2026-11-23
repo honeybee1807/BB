@@ -53,35 +53,74 @@ async function createAdminUser(email: string): Promise<string> {
 beforeAll(async () => {
   ids.owner = await createAdminUser(ownerEmail);
   ids.team = await createAdminUser(teamEmail);
-  check(await admin.from("admin_profiles").insert([
-    { id: ids.owner, full_name: "API Owner", role: "owner" },
-    { id: ids.team, full_name: "API Team", role: "team_member" },
-  ]), "profiles");
+  check(
+    await admin.from("admin_profiles").insert([
+      { id: ids.owner, full_name: "API Owner", role: "owner" },
+      { id: ids.team, full_name: "API Team", role: "team_member" },
+    ]),
+    "profiles",
+  );
   check(await admin.from("regions").insert({ id: ids.region, slug: slug("region"), name: "API Region" }), "region");
-  check(await admin.from("estates").insert({ id: ids.estate, region_id: ids.region, slug: slug("estate"), name: "API Estate" }), "estate");
-  check(await admin.from("properties").insert([
-    { id: ids.published, estate_id: ids.estate, slug: slug("published"), name: "Published", is_published: true },
-    { id: ids.draft, estate_id: ids.estate, slug: slug("draft"), name: "Draft", is_published: false },
-    { id: ids.deleted, estate_id: ids.estate, slug: slug("deleted"), name: "Deleted", is_published: true, deleted_at: new Date().toISOString() },
-  ]), "properties");
-  check(await admin.from("property_photos").insert([
-    { property_id: ids.published, storage_path: "a.webp", thumb_path: "a-t.webp" },
-    { property_id: ids.draft, storage_path: "b.webp", thumb_path: "b-t.webp" },
-  ]), "photos");
-  check(await admin.from("availability_blocks").insert([
-    { property_id: ids.published, date: "2027-01-10" },
-    { property_id: ids.draft, date: "2027-01-10" },
-    { property_id: ids.deleted, date: "2027-01-10" },
-  ]), "blocks");
-  check(await admin.from("blog_posts").insert([
-    { id: ids.postPublished, slug: slug("post"), title: "Published post", is_published: true },
-    { id: ids.postDraft, slug: slug("draft-post"), title: "Draft post", is_published: false },
-  ]), "posts");
-  check(await admin.from("inquiries").insert({
-    id: ids.inquiry, guest_name: "API Guest", guest_email: "guest@example.com", guest_phone: "0820000000",
-    check_in: "2027-02-01", check_out: "2027-02-03", adults: 2, consent_given_at: new Date().toISOString(),
-  }), "inquiry");
-  check(await admin.storage.from("property-photos").upload(photoPath, webpBytes, { contentType: "image/webp" }), "photo upload");
+  check(
+    await admin
+      .from("estates")
+      .insert({ id: ids.estate, region_id: ids.region, slug: slug("estate"), name: "API Estate" }),
+    "estate",
+  );
+  check(
+    await admin.from("properties").insert([
+      { id: ids.published, estate_id: ids.estate, slug: slug("published"), name: "Published", is_published: true },
+      { id: ids.draft, estate_id: ids.estate, slug: slug("draft"), name: "Draft", is_published: false },
+      {
+        id: ids.deleted,
+        estate_id: ids.estate,
+        slug: slug("deleted"),
+        name: "Deleted",
+        is_published: true,
+        deleted_at: new Date().toISOString(),
+      },
+    ]),
+    "properties",
+  );
+  check(
+    await admin.from("property_photos").insert([
+      { property_id: ids.published, storage_path: "a.webp", thumb_path: "a-t.webp" },
+      { property_id: ids.draft, storage_path: "b.webp", thumb_path: "b-t.webp" },
+    ]),
+    "photos",
+  );
+  check(
+    await admin.from("availability_blocks").insert([
+      { property_id: ids.published, date: "2027-01-10" },
+      { property_id: ids.draft, date: "2027-01-10" },
+      { property_id: ids.deleted, date: "2027-01-10" },
+    ]),
+    "blocks",
+  );
+  check(
+    await admin.from("blog_posts").insert([
+      { id: ids.postPublished, slug: slug("post"), title: "Published post", is_published: true },
+      { id: ids.postDraft, slug: slug("draft-post"), title: "Draft post", is_published: false },
+    ]),
+    "posts",
+  );
+  check(
+    await admin.from("inquiries").insert({
+      id: ids.inquiry,
+      guest_name: "API Guest",
+      guest_email: "guest@example.com",
+      guest_phone: "0820000000",
+      check_in: "2027-02-01",
+      check_out: "2027-02-03",
+      adults: 2,
+      consent_given_at: new Date().toISOString(),
+    }),
+    "inquiry",
+  );
+  check(
+    await admin.storage.from("property-photos").upload(photoPath, webpBytes, { contentType: "image/webp" }),
+    "photo upload",
+  );
 
   check(await admin.from("audit_log").insert({ action: "apitest.seed" }), "audit seed");
 
@@ -125,7 +164,10 @@ describe("anon reads public tables without errors", () => {
   });
 
   it("property_photos: only photos of published properties", async () => {
-    const { data, error } = await anon.from("property_photos").select("property_id").in("property_id", [ids.published, ids.draft]);
+    const { data, error } = await anon
+      .from("property_photos")
+      .select("property_id")
+      .in("property_id", [ids.published, ids.draft]);
     expect(error).toBeNull();
     expect(data?.map((p) => p.property_id)).toEqual([ids.published]);
   });
@@ -164,8 +206,13 @@ describe("anon is refused private tables", () => {
 
   it("inquiries: a direct insert with the anon key is refused", async () => {
     const { error } = await anon.from("inquiries").insert({
-      guest_name: "Spam", guest_email: "s@example.com", guest_phone: "0820000000",
-      check_in: "2027-01-01", check_out: "2027-01-02", adults: 1, consent_given_at: new Date().toISOString(),
+      guest_name: "Spam",
+      guest_email: "s@example.com",
+      guest_phone: "0820000000",
+      check_in: "2027-01-01",
+      check_out: "2027-01-02",
+      adults: 1,
+      consent_given_at: new Date().toISOString(),
     });
     expect(error?.code).toBe("42501");
   });
@@ -201,12 +248,20 @@ describe("anon functions", () => {
   });
 
   it("get_blocked_dates rejects an inverted range", async () => {
-    const { error } = await anon.rpc("get_blocked_dates", { p_property_id: ids.published, p_from: "2027-01-31", p_to: "2027-01-01" });
+    const { error } = await anon.rpc("get_blocked_dates", {
+      p_property_id: ids.published,
+      p_from: "2027-01-31",
+      p_to: "2027-01-01",
+    });
     expect(error?.code).toBe("22023");
   });
 
   it("get_blocked_dates rejects a range over 366 days", async () => {
-    const { error } = await anon.rpc("get_blocked_dates", { p_property_id: ids.published, p_from: "2027-01-01", p_to: "2028-01-02" });
+    const { error } = await anon.rpc("get_blocked_dates", {
+      p_property_id: ids.published,
+      p_from: "2027-01-01",
+      p_to: "2028-01-02",
+    });
     expect(error?.code).toBe("22023");
   });
 
@@ -221,9 +276,18 @@ describe("anon functions", () => {
   });
 
   it("block_dates and rate_limit_hit are not callable by anon", async () => {
-    const block = await anon.rpc("block_dates", { p_property_id: ids.published, p_from: "2027-03-01", p_to: "2027-03-02" });
+    const block = await anon.rpc("block_dates", {
+      p_property_id: ids.published,
+      p_from: "2027-03-01",
+      p_to: "2027-03-02",
+    });
     expect(block.error?.code).toBe("42501");
-    const hit = await anon.rpc("rate_limit_hit", { p_bucket: "login", p_key_hash: "a".repeat(32), p_window_seconds: 900, p_max: 5 });
+    const hit = await anon.rpc("rate_limit_hit", {
+      p_bucket: "login",
+      p_key_hash: "a".repeat(32),
+      p_window_seconds: 900,
+      p_max: 5,
+    });
     expect(hit.error).not.toBeNull();
   });
 });
@@ -236,13 +300,17 @@ describe("storage through the Storage API", () => {
   });
 
   it.each(["property-photos", "blog-images", "uploads-tmp"])("anon cannot upload to %s", async (bucket) => {
-    const { error } = await anon.storage.from(bucket).upload(`apitest/${run}/anon.webp`, webpBytes, { contentType: "image/webp" });
+    const { error } = await anon.storage
+      .from(bucket)
+      .upload(`apitest/${run}/anon.webp`, webpBytes, { contentType: "image/webp" });
     expect(error).not.toBeNull();
   });
 
   it("team member and owner cannot upload directly", async () => {
     for (const c of [team, owner]) {
-      const { error } = await c.storage.from("property-photos").upload(`apitest/${run}/direct.webp`, webpBytes, { contentType: "image/webp" });
+      const { error } = await c.storage
+        .from("property-photos")
+        .upload(`apitest/${run}/direct.webp`, webpBytes, { contentType: "image/webp" });
       expect(error).not.toBeNull();
     }
   });
@@ -267,12 +335,16 @@ describe("storage through the Storage API", () => {
   it("signed upload URL works and refuses HEIC", async () => {
     const tmpPath = `apitest/${run}/${randomUUID()}.webp`;
     const signed = must(await admin.storage.from("uploads-tmp").createSignedUploadUrl(tmpPath), "signed url");
-    const ok = await anon.storage.from("uploads-tmp").uploadToSignedUrl(tmpPath, signed.token, webpBytes, { contentType: "image/webp" });
+    const ok = await anon.storage
+      .from("uploads-tmp")
+      .uploadToSignedUrl(tmpPath, signed.token, webpBytes, { contentType: "image/webp" });
     expect(ok.error).toBeNull();
 
     const heicPath = `apitest/${run}/${randomUUID()}.heic`;
     const signedHeic = must(await admin.storage.from("uploads-tmp").createSignedUploadUrl(heicPath), "signed url");
-    const bad = await anon.storage.from("uploads-tmp").uploadToSignedUrl(heicPath, signedHeic.token, webpBytes, { contentType: "image/heic" });
+    const bad = await anon.storage
+      .from("uploads-tmp")
+      .uploadToSignedUrl(heicPath, signedHeic.token, webpBytes, { contentType: "image/heic" });
     expect(bad.error).not.toBeNull();
 
     await admin.storage.from("uploads-tmp").remove([tmpPath, heicPath]);
@@ -287,9 +359,11 @@ describe("team member through the API", () => {
   });
 
   it("can update inquiry status, assignment and notes", async () => {
-    const { data, error } = await team.from("inquiries")
+    const { data, error } = await team
+      .from("inquiries")
       .update({ status: "in_progress", assigned_to: ids.team, internal_notes: "Called guest" })
-      .eq("id", ids.inquiry).select("status");
+      .eq("id", ids.inquiry)
+      .select("status");
     expect(error).toBeNull();
     expect(data).toEqual([{ status: "in_progress" }]);
   });
@@ -297,7 +371,9 @@ describe("team member through the API", () => {
   it("cannot soft delete a property, a post or an inquiry", async () => {
     const now = new Date().toISOString();
     expect((await team.from("properties").update({ deleted_at: now }).eq("id", ids.draft)).error?.code).toBe("42501");
-    expect((await team.from("blog_posts").update({ deleted_at: now }).eq("id", ids.postDraft)).error?.code).toBe("42501");
+    expect((await team.from("blog_posts").update({ deleted_at: now }).eq("id", ids.postDraft)).error?.code).toBe(
+      "42501",
+    );
     expect((await team.from("inquiries").update({ deleted_at: now }).eq("id", ids.inquiry)).error?.code).toBe("42501");
   });
 
@@ -317,8 +393,11 @@ describe("team member through the API", () => {
   });
 
   it("can delete a property photo row", async () => {
-    const inserted = await admin.from("property_photos")
-      .insert({ property_id: ids.draft, storage_path: "team-del.webp", thumb_path: "team-del-t.webp" }).select("id").single();
+    const inserted = await admin
+      .from("property_photos")
+      .insert({ property_id: ids.draft, storage_path: "team-del.webp", thumb_path: "team-del-t.webp" })
+      .select("id")
+      .single();
     if (inserted.error) throw new Error(`photo: ${inserted.error.message}`);
     const photo = inserted.data;
     const { data, error } = await team.from("property_photos").delete().eq("id", photo.id).select("id");
@@ -341,7 +420,11 @@ describe("team member through the API", () => {
 
 describe("owner through the API", () => {
   it("can soft delete and restore, but not hard delete", async () => {
-    const del = await owner.from("properties").update({ deleted_at: new Date().toISOString() }).eq("id", ids.draft).select("id");
+    const del = await owner
+      .from("properties")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", ids.draft)
+      .select("id");
     expect(del.error).toBeNull();
     expect(del.data).toHaveLength(1);
     const restore = await owner.from("properties").update({ deleted_at: null }).eq("id", ids.draft).select("id");
@@ -350,9 +433,16 @@ describe("owner through the API", () => {
   });
 
   it("can manage regions and page SEO", async () => {
-    const r = await owner.from("regions").insert({ slug: slug("owner-region"), name: "Owner Region" }).select("id");
+    const r = await owner
+      .from("regions")
+      .insert({ slug: slug("owner-region"), name: "Owner Region" })
+      .select("id");
     expect(r.error).toBeNull();
-    const s = await owner.from("seo_pages").update({ description: "Updated by API test" }).eq("path", "/about").select("path");
+    const s = await owner
+      .from("seo_pages")
+      .update({ description: "Updated by API test" })
+      .eq("path", "/about")
+      .select("path");
     expect(s.data).toEqual([{ path: "/about" }]);
   });
 
@@ -385,14 +475,21 @@ describe("owner two-factor", () => {
   it("owner at aal1 gets no access", async () => {
     expect((await ownerAal1.from("inquiries").select("id")).data).toEqual([]);
     expect((await ownerAal1.from("regions").insert({ slug: slug("aal1"), name: "X" })).error?.code).toBe("42501");
-    const del = await ownerAal1.from("properties").update({ deleted_at: new Date().toISOString() }).eq("id", ids.draft).select("id");
+    const del = await ownerAal1
+      .from("properties")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", ids.draft)
+      .select("id");
     expect(del.data ?? []).toEqual([]);
     expect((await ownerAal1.from("audit_log").select("id")).data).toEqual([]);
   });
 
   it("recovery owner can enrol TOTP at aal1", async () => {
     ids.recovery = await createAdminUser(recoveryEmail);
-    check(await admin.from("admin_profiles").insert({ id: ids.recovery, full_name: "API Recovery Owner", role: "owner" }), "recovery");
+    check(
+      await admin.from("admin_profiles").insert({ id: ids.recovery, full_name: "API Recovery Owner", role: "owner" }),
+      "recovery",
+    );
     const recovery = await signedInClient(stack, recoveryEmail, password);
     expect((await recovery.rpc("is_owner")).data).toBe(false);
     await enrolAndVerifyTotp(recovery);

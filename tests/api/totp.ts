@@ -43,4 +43,3 @@ export async function enrolAndVerifyTotp(c: Db): Promise<{ factorId: string; sec
   if (verified.error) throw new Error(`TOTP verification failed: ${verified.error.message}`);
   return { factorId, secret: totp.secret };
 }
-

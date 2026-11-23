@@ -68,7 +68,8 @@ type ApiAuth = { identity: AdminIdentity; supabase: UserClient };
 // The two-factor routes run before aal2, so any level is allowed here.
 export async function requireSignedInAdmin(): Promise<ApiAuth | Response> {
   const state = await getSessionState();
-  if (state.status === "signed_out") return Response.json({ ok: false, error: "Please sign in again." }, { status: 401 });
+  if (state.status === "signed_out")
+    return Response.json({ ok: false, error: "Please sign in again." }, { status: 401 });
   if (state.status === "not_admin") return Response.json({ ok: false, error: "Not found." }, { status: 404 });
   return { identity: state.identity, supabase: await createClient() };
 }

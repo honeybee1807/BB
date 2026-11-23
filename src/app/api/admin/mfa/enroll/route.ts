@@ -25,6 +25,11 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "Bargain Breaks admin" });
   if (error) return responses.serverError();
 
-  await audit({ actorId: identity.userId, action: "mfa.enrol_started", entityType: "admin", entityId: identity.userId });
+  await audit({
+    actorId: identity.userId,
+    action: "mfa.enrol_started",
+    entityType: "admin",
+    entityId: identity.userId,
+  });
   return json({ ok: true, factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret });
 }

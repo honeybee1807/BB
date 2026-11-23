@@ -22,10 +22,12 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
-    "db:types": "supabase gen types typescript --local > src/types/database.ts",
+    "db:types": "supabase gen types typescript --local > src/types/database.ts && prettier --write src/types/database.ts",
     "secrets:scan": "gitleaks git --redact --no-banner .",
     "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner .",
-    "test:api": "vitest run --config vitest.api.config.ts"
+    "test:api": "vitest run --config vitest.api.config.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.8",
@@ -51,6 +53,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "prettier": "^3.10.1",
     "supabase": "^3.3.0",
     "tailwindcss": "4.3.3",
     "typescript": "^5",

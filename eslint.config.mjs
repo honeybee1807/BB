@@ -18,8 +18,7 @@ const eslintConfig = defineConfig([
         {
           selector:
             "MemberExpression[object.object.name='process'][object.property.name='env'][property.name='SUPABASE_SERVICE_ROLE_KEY']",
-          message:
-            "The service role key may only be read in src/lib/supabase/admin.ts (server-only).",
+          message: "The service role key may only be read in src/lib/supabase/admin.ts (server-only).",
         },
       ],
     },

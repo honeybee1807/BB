@@ -1,7 +1,18 @@
 // Auth routes, run against the local dev server and Supabase stack.
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { totpCode } from "../tests/api/totp";
-import { admin, apiAs, auditRows, cleanup, createUser, emailHashPrefix, password, trackEmail, uniqueIp, type TestUser } from "./support";
+import {
+  admin,
+  apiAs,
+  auditRows,
+  cleanup,
+  createUser,
+  emailHashPrefix,
+  password,
+  trackEmail,
+  uniqueIp,
+  type TestUser,
+} from "./support";
 
 test.describe.configure({ mode: "serial" });
 
@@ -41,7 +52,14 @@ async function enrolOwner(api: APIRequestContext): Promise<{ factorId: string; s
 
 test.describe("signed out", () => {
   test("admin pages return 404 and the login page is noindex", async ({ request }) => {
-    for (const path of ["/admin", "/admin/inquiries", "/admin/team", "/admin/settings", "/admin/mfa", "/admin/account"]) {
+    for (const path of [
+      "/admin",
+      "/admin/inquiries",
+      "/admin/team",
+      "/admin/settings",
+      "/admin/mfa",
+      "/admin/account",
+    ]) {
       const res = await request.get(path, { maxRedirects: 0 });
       expect(res.status(), path).toBe(404);
       expect(await res.text()).not.toContain("Welcome");
@@ -54,7 +72,13 @@ test.describe("signed out", () => {
   test("admin routes need a session", async () => {
     const api = await apiAs();
     expect((await api.post("/api/admin/mfa/enroll", { data: {} })).status()).toBe(401);
-    expect((await api.post("/api/admin/mfa/verify", { data: { factorId: "00000000-0000-4000-8000-000000000000", code: "123456" } })).status()).toBe(401);
+    expect(
+      (
+        await api.post("/api/admin/mfa/verify", {
+          data: { factorId: "00000000-0000-4000-8000-000000000000", code: "123456" },
+        })
+      ).status(),
+    ).toBe(401);
   });
 });
 
@@ -62,15 +86,22 @@ test.describe("login input", () => {
   test("refuses a missing or foreign Origin", async ({ playwright }) => {
     const noOrigin = await playwright.request.newContext({ baseURL: "http://localhost:3000" });
     expect((await noOrigin.post("/api/admin/login", { data: { email: team.email, password } })).status()).toBe(403);
-    const foreign = await playwright.request.newContext({ baseURL: "http://localhost:3000", extraHTTPHeaders: { origin: "https://evil.example" } });
+    const foreign = await playwright.request.newContext({
+      baseURL: "http://localhost:3000",
+      extraHTTPHeaders: { origin: "https://evil.example" },
+    });
     expect((await foreign.post("/api/admin/login", { data: { email: team.email, password } })).status()).toBe(403);
   });
 
   test("rejects unknown fields, bad emails and non-JSON bodies", async () => {
     const api = await apiAs();
-    expect((await api.post("/api/admin/login", { data: { email: team.email, password, role: "owner" } })).status()).toBe(400);
+    expect(
+      (await api.post("/api/admin/login", { data: { email: team.email, password, role: "owner" } })).status(),
+    ).toBe(400);
     expect((await api.post("/api/admin/login", { data: { email: "not-an-email", password } })).status()).toBe(400);
-    expect((await api.post("/api/admin/login", { headers: { "content-type": "text/plain" }, data: "email=x" })).status()).toBe(400);
+    expect(
+      (await api.post("/api/admin/login", { headers: { "content-type": "text/plain" }, data: "email=x" })).status(),
+    ).toBe(400);
   });
 });
 
@@ -116,7 +147,9 @@ test.describe("lockout", () => {
       expect(res.status()).toBe(401);
       expect((await res.json()).error).toBe(INVALID);
     }
-    const unknown = await login(api, `nobody-${Date.now()}@test.local`);
+    const nobody = `nobody-${Date.now()}@test.local`;
+    trackEmail(nobody);
+    const unknown = await login(api, nobody);
     expect((await unknown.json()).error).toBe(INVALID);
   });
 });
@@ -128,7 +161,10 @@ test.describe("team member session", () => {
     expect(res.status()).toBe(200);
     expect(await res.json()).toEqual({ ok: true, next: "/admin" });
 
-    const cookies = res.headersArray().filter((h) => h.name.toLowerCase() === "set-cookie").map((h) => h.value);
+    const cookies = res
+      .headersArray()
+      .filter((h) => h.name.toLowerCase() === "set-cookie")
+      .map((h) => h.value);
     const auth = cookies.filter((c) => /^sb-[^=]+-auth-token/.test(c));
     expect(auth.length).toBeGreaterThan(0);
     for (const c of auth) {
@@ -215,10 +251,15 @@ test.describe("owner two-factor", () => {
     await login(api, mfaTarget.email);
     const { factorId, secret } = await enrolOwner(api);
     for (let i = 1; i <= 4; i++) {
-      expect((await api.post("/api/admin/mfa/verify", { data: { factorId, code: "000000" } })).status(), `code ${i}`).toBe(401);
+      expect(
+        (await api.post("/api/admin/mfa/verify", { data: { factorId, code: "000000" } })).status(),
+        `code ${i}`,
+      ).toBe(401);
     }
     expect((await api.post("/api/admin/mfa/verify", { data: { factorId, code: "000000" } })).status()).toBe(429);
-    expect((await api.post("/api/admin/mfa/verify", { data: { factorId, code: totpCode(secret) } })).status()).toBe(429);
+    expect((await api.post("/api/admin/mfa/verify", { data: { factorId, code: totpCode(secret) } })).status()).toBe(
+      429,
+    );
     expect(await auditRows({ action: "mfa.lockout", actorId: mfaTarget.id })).toBe(1);
   });
 });
@@ -228,7 +269,9 @@ test.describe("team member TOTP", () => {
     const api = await apiAs();
     await login(api, team.email);
     const { factorId, secret } = await enrolOwner(api); // same route; no owner rights needed
-    expect((await api.post("/api/admin/mfa/verify", { data: { factorId, code: totpCode(secret) } })).status()).toBe(200);
+    expect((await api.post("/api/admin/mfa/verify", { data: { factorId, code: totpCode(secret) } })).status()).toBe(
+      200,
+    );
     await api.post("/api/admin/logout", { data: {} });
 
     const again = await apiAs();

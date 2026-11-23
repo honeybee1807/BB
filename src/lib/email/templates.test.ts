@@ -5,9 +5,23 @@ const when = new Date("2026-11-23T19:05:00Z");
 
 describe("security email templates", () => {
   it("login alert has who, when (SAST), location, device and the act-now line", () => {
-    const email = loginAlertEmail({ name: "Test Owner", email: "owner@example.com", when, location: "Durban, ZA", device: "Chrome on Windows" });
+    const email = loginAlertEmail({
+      name: "Test Owner",
+      email: "owner@example.com",
+      when,
+      location: "Durban, ZA",
+      device: "Chrome on Windows",
+    });
     expect(email.subject).toBe("Bargain Breaks admin sign-in");
-    for (const part of ["Test Owner", "owner@example.com", "23 Nov 2026", "21:05 SAST", "Durban, ZA", "Chrome on Windows", "NOT you"]) {
+    for (const part of [
+      "Test Owner",
+      "owner@example.com",
+      "23 Nov 2026",
+      "21:05 SAST",
+      "Durban, ZA",
+      "Chrome on Windows",
+      "NOT you",
+    ]) {
       expect(email.text).toContain(part);
     }
   });
@@ -20,7 +34,13 @@ describe("security email templates", () => {
   });
 
   it("delete alert names who, what and how to restore", () => {
-    const email = deleteAlertEmail({ actorName: "Test Owner", action: "deleted", entityLabel: "Property: Sea View", when, restoreHint: "Restore it from the bin." });
+    const email = deleteAlertEmail({
+      actorName: "Test Owner",
+      action: "deleted",
+      entityLabel: "Property: Sea View",
+      when,
+      restoreHint: "Restore it from the bin.",
+    });
     expect(email.subject).toContain("Property: Sea View deleted");
     expect(email.text).toContain("Restore it from the bin.");
   });
@@ -40,7 +60,13 @@ describe("security email templates", () => {
   });
 
   it("escapes HTML in user-controlled values", () => {
-    const email = loginAlertEmail({ name: "<script>alert(1)</script>", email: "a@example.com", when, location: "x", device: "y" });
+    const email = loginAlertEmail({
+      name: "<script>alert(1)</script>",
+      email: "a@example.com",
+      when,
+      location: "x",
+      device: "y",
+    });
     expect(email.html).not.toContain("<script>");
     expect(email.html).toContain("&lt;script&gt;");
     expect(escapeHtml(`"'&`)).toBe("&quot;&#39;&amp;");

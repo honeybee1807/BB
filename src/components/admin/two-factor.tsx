@@ -2,14 +2,19 @@
 
 import { useId, useState } from "react";
 
-type Props =
-  | { mode: "verify"; factorId: string }
-  | { mode: "enrol" };
+type Props = { mode: "verify"; factorId: string } | { mode: "enrol" };
 
 type EnrolData = { factorId: string; qrCode: string; secret: string };
 
-async function postJson(url: string, body: unknown): Promise<{ ok: boolean; error?: string; next?: string } & Partial<EnrolData>> {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+async function postJson(
+  url: string,
+  body: unknown,
+): Promise<{ ok: boolean; error?: string; next?: string } & Partial<EnrolData>> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
   return (await res.json()) as { ok: boolean; error?: string; next?: string } & Partial<EnrolData>;
 }
 
@@ -68,8 +73,8 @@ export function TwoFactor(props: Props) {
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted">
-          Use an authenticator app such as Google Authenticator, Microsoft Authenticator or 1Password. You will scan a QR code, then enter
-          the 6-digit code it shows.
+          Use an authenticator app such as Google Authenticator, Microsoft Authenticator or 1Password. You will scan a
+          QR code, then enter the 6-digit code it shows.
         </p>
         {error && (
           <p role="alert" className="text-sm text-danger">
@@ -95,7 +100,13 @@ export function TwoFactor(props: Props) {
           <p className="text-sm text-muted">1. Scan this QR code with your authenticator app.</p>
           {/* data URI from Supabase Auth, so next/image doesn't apply */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={enrol.qrCode} alt="QR code for setting up two-factor sign-in" width={180} height={180} className="rounded-md bg-white p-2 ring-1 ring-line" />
+          <img
+            src={enrol.qrCode}
+            alt="QR code for setting up two-factor sign-in"
+            width={180}
+            height={180}
+            className="rounded-md bg-white p-2 ring-1 ring-line"
+          />
           <p className="text-sm text-muted">
             Can&apos;t scan it? Enter this setup key instead:{" "}
             <code className="break-all rounded bg-admin-bg px-1.5 py-0.5 font-mono text-ink">{enrol.secret}</code>

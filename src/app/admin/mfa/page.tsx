@@ -26,11 +26,17 @@ export default async function MfaPage() {
     <main className="flex flex-1 items-center justify-center px-4 py-16">
       <div className="w-full max-w-md rounded-card bg-white p-8 shadow-sm ring-1 ring-line">
         <p className="font-serif text-2xl uppercase tracking-display text-navy">Bargain Breaks</p>
-        <h1 className="mt-2 text-lg font-semibold">{verifiedFactorId ? "Enter your authentication code" : "Set up two-factor sign-in"}</h1>
+        <h1 className="mt-2 text-lg font-semibold">
+          {verifiedFactorId ? "Enter your authentication code" : "Set up two-factor sign-in"}
+        </h1>
         {!verifiedFactorId && identity.role === "owner" && (
-          <p className="mt-2 text-sm text-muted">The owner account must use two-factor sign-in before opening the dashboard.</p>
+          <p className="mt-2 text-sm text-muted">
+            The owner account must use two-factor sign-in before opening the dashboard.
+          </p>
         )}
-        <div className="mt-6">{verifiedFactorId ? <TwoFactor mode="verify" factorId={verifiedFactorId} /> : <TwoFactor mode="enrol" />}</div>
+        <div className="mt-6">
+          {verifiedFactorId ? <TwoFactor mode="verify" factorId={verifiedFactorId} /> : <TwoFactor mode="enrol" />}
+        </div>
         <div className="mt-6 border-t border-line pt-4">
           <SignOutButton className="text-sm text-muted underline underline-offset-2 hover:text-ink" />
         </div>

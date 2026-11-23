@@ -46,11 +46,26 @@ export async function POST(request: Request) {
     } catch {
       return responses.serverError();
     }
-    await audit({ actorId: identity.userId, action: "mfa.failed", entityType: "admin", entityId: identity.userId, ipHash });
+    await audit({
+      actorId: identity.userId,
+      action: "mfa.failed",
+      entityType: "admin",
+      entityId: identity.userId,
+      ipHash,
+    });
     if (failures + 1 === max) {
-      await audit({ actorId: identity.userId, action: "mfa.lockout", entityType: "admin", entityId: identity.userId, ipHash });
+      await audit({
+        actorId: identity.userId,
+        action: "mfa.lockout",
+        entityType: "admin",
+        entityId: identity.userId,
+        ipHash,
+      });
       after(() =>
-        sendSecurityAlert("mfa-lockout", lockoutAlertEmail({ targetEmail: identity.email, attempts: max, when: new Date(), reason: "two-factor" })),
+        sendSecurityAlert(
+          "mfa-lockout",
+          lockoutAlertEmail({ targetEmail: identity.email, attempts: max, when: new Date(), reason: "two-factor" }),
+        ),
       );
       return json({ ok: false, error: LOCKED, locked: true }, 429);
     }

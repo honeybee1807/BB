@@ -8,9 +8,5 @@ export function PageHeader({ title, description }: { title: string; description?
 }
 
 export function NotBuiltYet() {
-  return (
-    <div className="rounded-card bg-white p-6 text-muted shadow-sm ring-1 ring-line">
-      Not built yet.
-    </div>
-  );
+  return <div className="rounded-card bg-white p-6 text-muted shadow-sm ring-1 ring-line">Not built yet.</div>;
 }
