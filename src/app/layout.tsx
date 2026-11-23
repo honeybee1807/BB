@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { publicEnv } from "@/lib/env";
+import { SHARE_IMAGE } from "@/lib/seo";
 import "./globals.css";
 
 const inter = Inter({
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
     default: "Bargain Breaks",
     template: "%s | Bargain Breaks",
   },
+  openGraph: { siteName: "Bargain Breaks", locale: "en_ZA", images: [SHARE_IMAGE] },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
