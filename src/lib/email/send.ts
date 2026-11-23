@@ -39,3 +39,7 @@ async function sendEmail(kind: string, to: string[], content: EmailContent, repl
 export function sendSecurityAlert(kind: string, content: EmailContent): Promise<SendResult> {
   return sendEmail(kind, serverEnv.securityAlertTo, content);
 }
+
+export function sendInquiryAlert(content: EmailContent, guestEmail: string): Promise<SendResult> {
+  return sendEmail("inquiry", serverEnv.inquiryNotifyTo, content, guestEmail);
+}

@@ -1,4 +1,6 @@
-// No passwords, tokens, codes, raw IPs or guest messages in these emails.
+import { formatRand, plural } from "@/lib/format";
+
+// Security emails never carry passwords, tokens, codes, raw IPs or guest messages.
 export type EmailContent = { subject: string; text: string; html: string };
 
 export function escapeHtml(value: string): string {
@@ -103,5 +105,49 @@ export function deleteAlertEmail(input: {
       ["When", formatSast(input.when)],
     ],
     [input.restoreHint, "If you did not expect this, contact Olideen Technologies."],
+  );
+}
+
+const ACCOMMODATION_LABELS = {
+  no_preference: "No preference",
+  resort: "Resort",
+  holiday_home: "Holiday home",
+} as const;
+
+export function inquiryEmail(input: {
+  adminUrl: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  adults: number;
+  children: number;
+  budgetMin: number | null;
+  budgetMax: number | null;
+  accommodationType: keyof typeof ACCOMMODATION_LABELS;
+  propertyName: string | null;
+  requirements: string;
+}): EmailContent {
+  const budget =
+    input.budgetMin === null && input.budgetMax === null
+      ? "Not given"
+      : `${input.budgetMin === null ? "Any" : formatRand(input.budgetMin)} to ${input.budgetMax === null ? "any" : formatRand(input.budgetMax)}`;
+  return render(
+    `New inquiry from ${input.fullName}`,
+    "A new inquiry has come in",
+    [
+      ["Guest", input.fullName],
+      ["Email", input.email],
+      ["Phone", input.phone],
+      ["Property", input.propertyName ?? "Any"],
+      ["Dates", `${input.checkIn} to ${input.checkOut} (${plural(input.nights, "night", "nights")})`],
+      ["Guests", `${plural(input.adults, "adult", "adults")}, ${plural(input.children, "child", "children")}`],
+      ["Budget", budget],
+      ["Accommodation", ACCOMMODATION_LABELS[input.accommodationType]],
+      ["Requirements", input.requirements || "None"],
+    ],
+    [`Open the inquiry: ${input.adminUrl}`, "Reply to this email to answer the guest directly."],
   );
 }

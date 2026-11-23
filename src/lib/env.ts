@@ -14,6 +14,9 @@ export const publicEnv = {
   get siteUrl(): string {
     return required("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL).replace(/\/+$/, "");
   },
+  get turnstileSiteKey(): string {
+    return required("NEXT_PUBLIC_TURNSTILE_SITE_KEY", process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  },
   get showPublicAvailability(): boolean {
     return process.env.NEXT_PUBLIC_SHOW_PUBLIC_AVAILABILITY === "true";
   },

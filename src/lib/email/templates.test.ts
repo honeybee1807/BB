@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { deleteAlertEmail, escapeHtml, formatSast, lockoutAlertEmail, loginAlertEmail } from "./templates";
+import {
+  deleteAlertEmail,
+  escapeHtml,
+  formatSast,
+  inquiryEmail,
+  lockoutAlertEmail,
+  loginAlertEmail,
+} from "./templates";
 
 const when = new Date("2026-11-23T19:05:00Z");
 
@@ -74,5 +81,46 @@ describe("security email templates", () => {
 
   it("formats times in South African time", () => {
     expect(formatSast(when)).toMatch(/21:05 SAST$/);
+  });
+});
+
+describe("inquiry email", () => {
+  const base = {
+    adminUrl: "https://example.co.za/admin/inquiries/abc",
+    fullName: "Fatima Khan",
+    email: "fatima@example.com",
+    phone: "082 123 4567",
+    checkIn: "2026-12-12",
+    checkOut: "2026-12-15",
+    nights: 3,
+    adults: 2,
+    children: 1,
+    budgetMin: 1500,
+    budgetMax: null,
+    accommodationType: "holiday_home" as const,
+    propertyName: "Mountain View Villa",
+    requirements: "Ground floor <please>",
+  };
+
+  it("has the guest details, stay, budget and admin link", () => {
+    const email = inquiryEmail(base);
+    expect(email.subject).toBe("New inquiry from Fatima Khan");
+    for (const part of [
+      "fatima@example.com",
+      "2026-12-12 to 2026-12-15 (3 nights)",
+      "2 adults, 1 child",
+      "R1,500 to any",
+      "Holiday home",
+      "Mountain View Villa",
+      "https://example.co.za/admin/inquiries/abc",
+    ]) {
+      expect(email.text).toContain(part);
+    }
+  });
+
+  it("escapes guest text in the HTML version", () => {
+    const email = inquiryEmail(base);
+    expect(email.html).toContain("Ground floor &lt;please&gt;");
+    expect(email.html).not.toContain("<please>");
   });
 });
