@@ -7,10 +7,10 @@ export function PageHeader({ title, description }: { title: string; description?
   );
 }
 
-export function ComingInPhase({ phase }: { phase: number }) {
+export function NotBuiltYet() {
   return (
     <div className="rounded-card bg-white p-6 text-muted shadow-sm ring-1 ring-line">
-      This section is built in phase {phase} of the project.
+      Not built yet.
     </div>
   );
 }

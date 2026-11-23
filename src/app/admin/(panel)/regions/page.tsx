@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ComingInPhase, PageHeader } from "@/components/admin/page-header";
+import { NotBuiltYet, PageHeader } from "@/components/admin/page-header";
 import { requireAdminPage } from "@/lib/auth/admin-session";
 
 export const instant = false;
@@ -11,7 +11,7 @@ export default async function RegionsandestatesPage() {
   return (
     <>
       <PageHeader title="Regions and estates" description="The Region > Estate > Property hierarchy." />
-      <ComingInPhase phase={7} />
+      <NotBuiltYet />
     </>
   );
 }

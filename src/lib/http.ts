@@ -8,7 +8,7 @@ export function json(body: unknown, status = 200): Response {
 export const responses = {
   forbiddenOrigin: () => json({ ok: false, error: "Request blocked." }, 403),
   badRequest: (message = "Please check the form and try again.") => json({ ok: false, error: message }, 400),
-  serverError: () => json({ ok: false, error: "Something went wrong. Please try again." }, 500),
+  serverError: () => json({ ok: false, error: "Sorry, we couldn't do that just now. Please try again in a minute." }, 500),
 };
 
 export async function readJsonBody(request: Request, maxBytes = 10_000): Promise<unknown> {

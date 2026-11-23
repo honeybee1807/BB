@@ -31,10 +31,10 @@ export function TwoFactor(props: Props) {
       if (body.ok && body.factorId && body.qrCode && body.secret) {
         setEnrol({ factorId: body.factorId, qrCode: body.qrCode, secret: body.secret });
       } else {
-        setError(body.error ?? "Could not start two-factor set-up.");
+        setError(body.error ?? "We couldn't start two-factor set-up. Please try again.");
       }
     } catch {
-      setError("Could not start two-factor set-up. Please try again.");
+      setError("We couldn't start two-factor set-up. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -82,7 +82,7 @@ export function TwoFactor(props: Props) {
           disabled={busy}
           className="self-start rounded-md bg-navy px-4 py-2.5 font-medium text-white hover:bg-navy-deep disabled:opacity-60"
         >
-          {busy ? "Preparing…" : "Set up two-factor sign-in"}
+          {busy ? "Preparing..." : "Set up two-factor sign-in"}
         </button>
       </div>
     );
@@ -130,7 +130,7 @@ export function TwoFactor(props: Props) {
         disabled={busy}
         className="self-start rounded-md bg-navy px-4 py-2.5 font-medium text-white hover:bg-navy-deep disabled:opacity-60"
       >
-        {busy ? "Checking…" : "Verify"}
+        {busy ? "Checking..." : "Verify"}
       </button>
     </form>
   );

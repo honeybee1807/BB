@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ComingInPhase, PageHeader } from "@/components/admin/page-header";
+import { NotBuiltYet, PageHeader } from "@/components/admin/page-header";
 import { requireAdminPage } from "@/lib/auth/admin-session";
 
 export const instant = false;
@@ -11,7 +11,7 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" description="Page titles and descriptions for search engines." />
-      <ComingInPhase phase={8} />
+      <NotBuiltYet />
     </>
   );
 }
