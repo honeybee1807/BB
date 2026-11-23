@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import { publicEnv } from "@/lib/env";
 import "./globals.css";
 
 const inter = Inter({
@@ -16,6 +17,7 @@ const heading = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(publicEnv.siteUrl),
   title: {
     default: "Bargain Breaks",
     template: "%s | Bargain Breaks",
