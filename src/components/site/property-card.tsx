@@ -42,9 +42,9 @@ export function PropertyFacts({
   ].filter((f) => f !== false);
   if (facts.length === 0) return null;
   return (
-    <ul className={`flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted ${className}`}>
+    <ul className={`flex flex-wrap gap-x-3.5 gap-y-1 text-[12.5px] text-muted ${className}`}>
       {facts.map(({ icon: Icon, text }) => (
-        <li key={text} className="flex items-center gap-1.5">
+        <li key={text} className="flex items-center gap-1">
           <Icon aria-hidden strokeWidth={1.5} className="size-3.5" />
           {text}
         </li>

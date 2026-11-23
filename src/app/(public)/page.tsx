@@ -94,7 +94,7 @@ export default async function HomePage() {
             A few of our favourite homes for families looking for halal accommodation, from the coast to the mountains.
           </p>
           {featured.length > 0 ? (
-            <ul className="mt-9 grid gap-x-8 gap-y-12 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="mt-9 grid gap-x-6 gap-y-12 sm:grid-cols-2 xl:grid-cols-3">
               {featured.map((property) => (
                 <li key={property.id}>
                   <PropertyCard property={property} />
