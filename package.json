@@ -1,6 +1,8 @@
 {
   "name": "bargain-breaks",
   "version": "0.1.0",
+  "description": "Website and admin dashboard for Bargain Breaks holiday accommodation.",
+  "author": "Olideen Technologies",
   "private": true,
   "type": "module",
   "engines": {
