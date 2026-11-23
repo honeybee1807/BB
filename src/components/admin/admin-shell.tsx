@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ChevronDown,
   House,
+  Headset,
   Inbox,
   LayoutDashboard,
   LogOut,
@@ -21,6 +22,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { supportHref } from "@/lib/site";
 import { IdleLogout } from "./idle-logout";
 import { signOut } from "./sign-out-button";
 
@@ -110,6 +112,23 @@ function UserMenu({ user, onNavigate }: { user: ShellUser; onNavigate: () => voi
   );
 }
 
+function SupportLink() {
+  const href = supportHref();
+  if (!href) return null;
+  return (
+    <a
+      href={href}
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-white/80 hover:bg-white/10 hover:text-white"
+    >
+      <Headset aria-hidden strokeWidth={1.5} className="size-5 shrink-0" />
+      <span>
+        <span className="block text-sm font-medium">Need help?</span>
+        <span className="block text-xs text-white/70">Contact support</span>
+      </span>
+    </a>
+  );
+}
+
 function SidebarBody({ user, onNavigate }: { user: ShellUser; onNavigate: () => void }) {
   const pathname = usePathname();
   const items = NAV.filter((item) => !item.ownerOnly || user.role === "owner");
@@ -137,8 +156,9 @@ function SidebarBody({ user, onNavigate }: { user: ShellUser; onNavigate: () => 
           })}
         </ul>
       </nav>
-      <div className="p-3">
+      <div className="flex flex-col gap-2 p-3">
         <UserMenu user={user} onNavigate={onNavigate} />
+        <SupportLink />
       </div>
     </>
   );

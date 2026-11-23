@@ -1,5 +1,6 @@
 import { cacheLife } from "next/cache";
 import Link from "next/link";
+import { ContactList } from "./contact-list";
 import { navLinks, Wordmark } from "./site-header";
 
 async function CurrentYear() {
@@ -29,6 +30,7 @@ export async function SiteFooter() {
               ))}
             </ul>
           </nav>
+          <ContactList />
         </div>
         <p className="text-xs text-muted">
           &copy; <CurrentYear /> Bargain Breaks &middot; Website by Olideen Technologies

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DraftNotice } from "@/components/site/draft-notice";
 import { SectionHeading } from "@/components/site/section-heading";
 import { TrustPoints } from "@/components/site/trust-points";
 import { staticPageMetadata } from "@/lib/seo";
@@ -15,6 +16,9 @@ export default function AboutPage() {
   return (
     <div className="mx-auto max-w-[1280px] px-5 py-14 sm:px-8 lg:py-20">
       <SectionHeading level={1} title="About us" />
+      <div className="mt-6 max-w-2xl">
+        <DraftNotice />
+      </div>
       <div className="mt-10 grid gap-14 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex max-w-2xl flex-col gap-5 text-[17px] leading-relaxed text-ink">
           <p className="font-serif text-2xl leading-snug text-navy">

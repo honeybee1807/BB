@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { ContactList } from "@/components/site/contact-list";
 import { InquiryCard } from "@/components/site/inquiry-form";
 import { SectionHeading } from "@/components/site/section-heading";
 import { publicEnv } from "@/lib/env";
 import { staticPageMetadata } from "@/lib/seo";
+import { contactLinks } from "@/lib/site";
 
 export function generateMetadata(): Promise<Metadata> {
   return staticPageMetadata("/contact", {
@@ -26,6 +28,14 @@ export default function ContactPage() {
             We read every inquiry personally, check availability with the home and reply by email or phone. Nothing is
             booked until we have spoken to you.
           </p>
+          {contactLinks().length > 0 && (
+            <section aria-labelledby="other-ways-heading" className="mt-4">
+              <h2 id="other-ways-heading" className="text-[13px] font-bold tracking-[0.12em] text-navy uppercase">
+                Other ways to reach us
+              </h2>
+              <ContactList className="mt-3 text-[15px]" />
+            </section>
+          )}
         </div>
         <InquiryCard siteKey={publicEnv.turnstileSiteKey} />
       </div>

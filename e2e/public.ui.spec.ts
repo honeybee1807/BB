@@ -196,3 +196,27 @@ test("the mobile menu opens and closes with Escape", async ({ page, isMobile }) 
   await expect(button).toHaveAttribute("aria-expanded", "false");
   await expect(button).toBeFocused();
 });
+
+test("never renders an empty or contact link while details are missing", async ({ page }) => {
+  for (const path of ["/", "/contact", "/about"]) {
+    await page.goto(path);
+    await expect(page.locator('a[href=""], a:not([href])')).toHaveCount(0);
+    await expect(page.locator('a[href^="tel:"], a[href^="mailto:"], a[href*="wa.me"]')).toHaveCount(0);
+  }
+  await expect(page.getByRole("heading", { name: "Other ways to reach us" })).toHaveCount(0);
+});
+
+test("about and privacy are marked as drafts", async ({ page }) => {
+  for (const path of ["/about", "/privacy"]) {
+    await page.goto(path);
+    await expect(page.getByRole("note")).toContainText("waiting for approval and is not final");
+  }
+  await expect(page.getByText("12 months")).toBeVisible();
+});
+
+test("the logo is the share image and appears on the admin login", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/images\/share\.jpg$/);
+  await page.goto("/admin/login");
+  await expect(page.getByRole("img", { name: "Bargain Breaks" })).toBeVisible();
+});

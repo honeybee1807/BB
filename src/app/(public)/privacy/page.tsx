@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DraftNotice } from "@/components/site/draft-notice";
 import { SectionHeading } from "@/components/site/section-heading";
 import { staticPageMetadata } from "@/lib/seo";
 
@@ -27,6 +28,10 @@ const SECTIONS = [
     body: "Inquiries are stored in a secure database that only our signed-in team can reach. Team accounts are protected with strong passwords, and the owner account with a second sign-in step.",
   },
   {
+    title: "How long we keep it",
+    body: "If your inquiry does not lead to a booking, we delete your details 12 months after you sent it. (Proposed period, still to be confirmed.)",
+  },
+  {
     title: "Spam protection",
     body: "The inquiry form uses Cloudflare Turnstile to check that a person, not a program, is sending it. Turnstile may process technical details such as your IP address for this check only.",
   },
@@ -40,6 +45,9 @@ export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-[1280px] px-5 py-14 sm:px-8 lg:py-20">
       <SectionHeading level={1} title="Privacy notice" />
+      <div className="mt-6 max-w-2xl">
+        <DraftNotice />
+      </div>
       <div className="mt-10 flex max-w-2xl flex-col gap-10 text-[16px] leading-relaxed text-ink">
         <p className="font-serif text-xl leading-snug text-navy">
           This notice explains what Bargain Breaks does with the personal information you give us through this website.
