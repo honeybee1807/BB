@@ -1,7 +1,16 @@
 import { randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 import { request, type APIRequestContext } from "@playwright/test";
 import { hashIdentifier } from "../src/lib/security/hash";
 import { client, readLocalStack } from "../tests/api/local-stack";
+
+// The tests compute rate-limit and audit hashes for cleanup, so they need the same
+// IP_HASH_SECRET as the dev server. Load only that one value from .env.local.
+if (!process.env.IP_HASH_SECRET) {
+  const secret = parseEnv(readFileSync(".env.local", "utf8")).IP_HASH_SECRET;
+  if (secret) process.env.IP_HASH_SECRET = secret;
+}
 
 /** Test-only helpers. Service role is used for fixtures and cleanup, never by the app under test. */
 export const stack = readLocalStack();

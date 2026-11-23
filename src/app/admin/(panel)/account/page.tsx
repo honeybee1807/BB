@@ -3,6 +3,9 @@ import { PageHeader } from "@/components/admin/page-header";
 import { TwoFactor } from "@/components/admin/two-factor";
 import { requireAdminPage } from "@/lib/auth/admin-session";
 
+// Request-time only: reads the session; never prerendered.
+export const instant = false;
+
 export const metadata: Metadata = { title: "Account security" };
 
 export default async function AccountPage() {

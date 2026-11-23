@@ -5,6 +5,9 @@ import { TwoFactor } from "@/components/admin/two-factor";
 import { getSessionState } from "@/lib/auth/admin-session";
 import { createClient } from "@/lib/supabase/server";
 
+// Request-time only: reads the session; never prerendered.
+export const instant = false;
+
 export const metadata: Metadata = { title: "Two-factor sign-in" };
 
 /**

@@ -1,17 +1,29 @@
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 
 /**
- * One-way hash for identifiers used as rate-limit keys and in audit rows
- * (IP addresses, email addresses), so the raw values are never stored.
+ * Keyed one-way hash (HMAC-SHA256) for identifiers used as rate-limit keys and
+ * in audit rows (IP addresses, email addresses, user ids), so raw values are
+ * never stored. Keyed with the server-only IP_HASH_SECRET, so a stored hash
+ * cannot be reversed by trying every IPv4 address or a list of emails.
  * Values are normalised (trimmed, lower-cased) and namespaced by kind.
  *
- * NOTE (decision pending): a plain SHA-256 of an IPv4 address can be reversed
- * by brute force. A keyed HMAC needs a new server secret, which is not in the
- * approved environment variable list.
+ * Rotating IP_HASH_SECRET only resets rate-limit windows and breaks the link
+ * between old and new audit hashes; nothing else depends on it.
  */
 export type HashKind = "ip" | "email" | "user";
 
+const MIN_SECRET_LENGTH = 32;
+
+function hashSecret(): string {
+  const secret = process.env.IP_HASH_SECRET;
+  if (!secret || secret.length < MIN_SECRET_LENGTH) {
+    // Never fall back to an unkeyed hash.
+    throw new Error("IP_HASH_SECRET is missing or shorter than 32 characters.");
+  }
+  return secret;
+}
+
 export function hashIdentifier(kind: HashKind, value: string): string {
   const normalised = value.trim().toLowerCase();
-  return createHash("sha256").update(`bargain-breaks:${kind}:${normalised}`).digest("hex");
+  return createHmac("sha256", hashSecret()).update(`${kind}:${normalised}`).digest("hex");
 }

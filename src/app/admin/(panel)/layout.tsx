@@ -1,6 +1,9 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdminPage } from "@/lib/auth/admin-session";
 
+// Request-time only: reads the session; never prerendered.
+export const instant = false;
+
 /**
  * Shell for every signed-in admin page. Layouts do not re-run on client-side
  * navigation, so each page ALSO calls requireAdminPage(); this call only

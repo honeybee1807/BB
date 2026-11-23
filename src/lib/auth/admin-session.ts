@@ -1,5 +1,6 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
@@ -27,8 +28,11 @@ export type SessionState =
 /**
  * Reads the session, the caller's own admin profile and the assurance level.
  * Request-scoped only (React cache): nothing is cached across requests.
+ * connection() marks this as request-time work, so Next never tries to
+ * prerender it (Supabase reads the current time to check token expiry).
  */
 export const getSessionState = cache(async (): Promise<SessionState> => {
+  await connection();
   const supabase = await createClient();
   const {
     data: { user },

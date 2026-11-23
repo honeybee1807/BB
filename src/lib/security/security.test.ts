@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { approximateLocation, describeDevice, getClientIp } from "./client-info";
 import { hashIdentifier } from "./hash";
 import { isSameOrigin } from "./origin";
@@ -30,7 +31,16 @@ describe("isSameOrigin", () => {
   });
 });
 
-describe("hashIdentifier", () => {
+describe("hashIdentifier (HMAC-SHA256 keyed with IP_HASH_SECRET)", () => {
+  const SECRET_A = "a".repeat(32) + "-test-secret-one";
+  const SECRET_B = "b".repeat(32) + "-test-secret-two";
+  beforeEach(() => {
+    vi.stubEnv("IP_HASH_SECRET", SECRET_A);
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("is stable, normalised and never contains the raw value", () => {
     const a = hashIdentifier("email", "  Owner@Example.com ");
     expect(a).toBe(hashIdentifier("email", "owner@example.com"));
@@ -39,6 +49,21 @@ describe("hashIdentifier", () => {
   });
   it("namespaces by kind", () => {
     expect(hashIdentifier("ip", "1.2.3.4")).not.toBe(hashIdentifier("email", "1.2.3.4"));
+  });
+  it("depends on the secret, so it cannot be reproduced without it", () => {
+    const withA = hashIdentifier("ip", "1.2.3.4");
+    vi.stubEnv("IP_HASH_SECRET", SECRET_B);
+    expect(hashIdentifier("ip", "1.2.3.4")).not.toBe(withA);
+  });
+  it("is not a plain (unkeyed) SHA-256 of the value", () => {
+    const plain = createHash("sha256").update("ip:1.2.3.4").digest("hex");
+    expect(hashIdentifier("ip", "1.2.3.4")).not.toBe(plain);
+  });
+  it("refuses to hash without a secret of at least 32 characters", () => {
+    vi.stubEnv("IP_HASH_SECRET", "");
+    expect(() => hashIdentifier("ip", "1.2.3.4")).toThrow(/IP_HASH_SECRET/);
+    vi.stubEnv("IP_HASH_SECRET", "short-secret");
+    expect(() => hashIdentifier("ip", "1.2.3.4")).toThrow(/IP_HASH_SECRET/);
   });
 });
 
