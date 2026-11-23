@@ -34,9 +34,6 @@ supabase/.env.*
 # Private project documents (client guide and mockups): kept local only
 /docs/
 
-# Claude Code local settings
-.claude/settings.local.json
-
 # dependencies
 /node_modules
 /.pnp
@@ -69,7 +66,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Local agent instruction files (kept on disk, not in the public repo)
-/AGENTS.md
-/CLAUDE.md
