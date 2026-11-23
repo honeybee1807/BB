@@ -1,4 +1,4 @@
--- properties: public sees published only; admins write; owner-only soft delete (trigger + policy).
+-- properties
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -19,7 +19,7 @@ insert into public.properties (id, estate_id, slug, name, is_published, deleted_
   ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'draft-home', 'Draft', false, null),
   ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 'deleted-home', 'Deleted', true, now());
 
--- Structure -----------------------------------------------------------------
+-- Structure
 select ok((select relrowsecurity from pg_class where oid = 'public.properties'::regclass), 'properties has RLS enabled');
 select ok(has_table_privilege('anon', 'public.properties', 'select'), 'anon has select on properties');
 select ok(not has_table_privilege('anon', 'public.properties', 'insert,update,delete,truncate'), 'anon has no write on properties');
@@ -29,7 +29,7 @@ select ok((select with_check like '%deleted_at%' and with_check like '%is_owner%
   where tablename = 'properties' and cmd = 'UPDATE'), 'update policy also restricts deleted_at to the owner');
 select has_trigger('public', 'properties', 'properties_owner_soft_delete', 'owner soft delete trigger exists');
 
--- Anon ----------------------------------------------------------------------
+-- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 select results_eq('select id from public.properties',
@@ -41,7 +41,7 @@ select throws_ok($$update public.properties set name = 'X'$$, '42501', null, 'an
 select throws_ok($$delete from public.properties$$, '42501', null, 'anon: cannot delete');
 reset role;
 
--- Outsider (authenticated, no profile) --------------------------------------
+-- Outsider (authenticated, no profile)
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}', true);
 set local role authenticated;
 select results_eq('select id from public.properties',
@@ -51,7 +51,7 @@ select throws_ok($$insert into public.properties (estate_id, slug, name) values 
 select is_empty($$update public.properties set name = 'X' returning id$$, 'outsider: cannot update');
 reset role;
 
--- Team member ---------------------------------------------------------------
+-- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
 select results_eq('select id from public.properties order by id',
@@ -75,7 +75,7 @@ reset role;
 select ok((select deleted_at is null from public.properties where slug = 'draft-home'), 'draft-home is still not deleted');
 select ok((select deleted_at is not null from public.properties where slug = 'deleted-home'), 'deleted-home is still deleted');
 
--- Owner ---------------------------------------------------------------------
+-- Owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.properties), 4, 'owner: sees all properties, including soft-deleted');
@@ -87,12 +87,12 @@ select throws_ok($$delete from public.properties where slug = 'team-home'$$, '42
   'owner: cannot hard delete through the API role (purge is server-side)');
 reset role;
 
--- Service role (owner-only purge route) -------------------------------------
+-- Service role (owner-only purge route)
 set local role service_role;
 select isnt_empty($$delete from public.properties where slug = 'team-home' returning id$$, 'service_role: can purge');
 reset role;
 
--- Constraints ---------------------------------------------------------------
+-- Constraints
 select throws_ok($$insert into public.properties (estate_id, slug, name, custom_fields) values
   ('20000000-0000-0000-0000-000000000001', 'cf-obj', 'X', '{"label":"a","value":"b"}')$$, '23514', null,
   'custom_fields must be an array');

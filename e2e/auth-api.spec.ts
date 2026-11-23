@@ -1,8 +1,4 @@
-/**
- * Phase 3 security tests through the real HTTP routes (guide section 14 rows:
- * admin login lockout, rotating httpOnly sessions, role separation, no admin content
- * for non-admins). Runs against the local dev server and local Supabase stack.
- */
+// Auth routes, run against the local dev server and Supabase stack.
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { totpCode } from "../tests/api/totp";
 import { admin, apiAs, auditRows, cleanup, createUser, emailHashPrefix, password, trackEmail, uniqueIp, type TestUser } from "./support";
@@ -44,7 +40,7 @@ async function enrolOwner(api: APIRequestContext): Promise<{ factorId: string; s
 }
 
 test.describe("signed out", () => {
-  test("admin pages return the standard 404, the login page is reachable and noindex", async ({ request }) => {
+  test("admin pages return 404 and the login page is noindex", async ({ request }) => {
     for (const path of ["/admin", "/admin/inquiries", "/admin/team", "/admin/settings", "/admin/mfa", "/admin/account"]) {
       const res = await request.get(path, { maxRedirects: 0 });
       expect(res.status(), path).toBe(404);
@@ -55,14 +51,14 @@ test.describe("signed out", () => {
     expect(await login.text()).toMatch(/<meta name="robots" content="noindex, nofollow/);
   });
 
-  test("admin API routes refuse requests without a session", async () => {
+  test("admin routes need a session", async () => {
     const api = await apiAs();
     expect((await api.post("/api/admin/mfa/enroll", { data: {} })).status()).toBe(401);
     expect((await api.post("/api/admin/mfa/verify", { data: { factorId: "00000000-0000-4000-8000-000000000000", code: "123456" } })).status()).toBe(401);
   });
 });
 
-test.describe("login route input checks", () => {
+test.describe("login input", () => {
   test("refuses a missing or foreign Origin", async ({ playwright }) => {
     const noOrigin = await playwright.request.newContext({ baseURL: "http://localhost:3000" });
     expect((await noOrigin.post("/api/admin/login", { data: { email: team.email, password } })).status()).toBe(403);
@@ -70,7 +66,7 @@ test.describe("login route input checks", () => {
     expect((await foreign.post("/api/admin/login", { data: { email: team.email, password } })).status()).toBe(403);
   });
 
-  test("refuses unknown fields, bad emails and non-JSON bodies with 400", async () => {
+  test("rejects unknown fields, bad emails and non-JSON bodies", async () => {
     const api = await apiAs();
     expect((await api.post("/api/admin/login", { data: { email: team.email, password, role: "owner" } })).status()).toBe(400);
     expect((await api.post("/api/admin/login", { data: { email: "not-an-email", password } })).status()).toBe(400);
@@ -79,7 +75,7 @@ test.describe("login route input checks", () => {
 });
 
 test.describe("lockout", () => {
-  test("5 failures for one email lock it; the correct password is then refused; one alert and audit trail", async () => {
+  test("locks an email after 5 failures, even for the right password", async () => {
     const api = await apiAs();
     for (let i = 1; i <= 4; i++) {
       const res = await login(api, lockTarget.email, "wrong-password");
@@ -101,7 +97,7 @@ test.describe("lockout", () => {
     expect(await auditRows({ action: "login.ok", actorId: lockTarget.id })).toBe(0);
   });
 
-  test("5 failures from one IP lock that IP, even for a different, valid account", async () => {
+  test("locks an IP after 5 failures", async () => {
     const ip = uniqueIp();
     const api = await apiAs(ip);
     for (let i = 0; i < 5; i++) {
@@ -113,7 +109,7 @@ test.describe("lockout", () => {
     expect(res.status()).toBe(429);
   });
 
-  test("a valid password for a non-admin or a deactivated admin gets the same neutral error", async () => {
+  test("non-admins get the same error as a wrong password", async () => {
     const api = await apiAs();
     for (const user of [outsider, inactive]) {
       const res = await login(api, user.email);
@@ -126,7 +122,7 @@ test.describe("lockout", () => {
 });
 
 test.describe("team member session", () => {
-  test("signs in with httpOnly, SameSite=Lax cookies; sees the shell but not owner pages; logout ends the session", async () => {
+  test("signs in with httpOnly cookies, stays out of owner pages and signs out", async () => {
     const api = await apiAs();
     const res = await login(api, team.email);
     expect(res.status()).toBe(200);
@@ -161,7 +157,7 @@ test.describe("team member session", () => {
 });
 
 test.describe("owner two-factor", () => {
-  test("owner must enrol TOTP before any admin page; then reaches owner pages; the next sign-in asks for a code", async () => {
+  test("owner enrols TOTP before any admin page", async () => {
     test.setTimeout(150_000); // waits for the next 30-second TOTP window
     const api = await apiAs();
     const res = await login(api, owner.email);
@@ -214,7 +210,7 @@ test.describe("owner two-factor", () => {
     expect(res.status()).toBe(400);
   });
 
-  test("5 wrong codes lock two-factor for 15 minutes, even for a correct code", async () => {
+  test("locks two-factor after 5 wrong codes", async () => {
     const api = await apiAs();
     await login(api, mfaTarget.email);
     const { factorId, secret } = await enrolOwner(api);
@@ -227,8 +223,8 @@ test.describe("owner two-factor", () => {
   });
 });
 
-test.describe("team member with optional TOTP", () => {
-  test("once enrolled, a team member must enter a code at each sign-in", async () => {
+test.describe("team member TOTP", () => {
+  test("asks an enrolled team member for a code", async () => {
     const api = await apiAs();
     await login(api, team.email);
     const { factorId, secret } = await enrolOwner(api); // same route; no owner rights needed

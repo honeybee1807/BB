@@ -1,4 +1,4 @@
--- availability_blocks, block_dates/open_dates, get_blocked_dates (the only anon path).
+-- availability_blocks and its functions
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -23,7 +23,7 @@ insert into public.availability_blocks (property_id, date) values
   ('30000000-0000-0000-0000-000000000002', '2027-01-10'),
   ('30000000-0000-0000-0000-000000000003', '2027-01-10');
 
--- Structure -----------------------------------------------------------------
+-- Structure
 select ok((select relrowsecurity from pg_class where oid = 'public.availability_blocks'::regclass),
   'availability_blocks has RLS enabled');
 select ok(not has_table_privilege('anon', 'public.availability_blocks', 'select,insert,update,delete,truncate'),
@@ -41,7 +41,7 @@ select is((select prosecdef from pg_proc where oid = 'public.get_blocked_dates(u
 select is((select proconfig from pg_proc where oid = 'public.get_blocked_dates(uuid,date,date)'::regprocedure),
   array['search_path=""'], 'get_blocked_dates has an empty search_path');
 
--- Anon ----------------------------------------------------------------------
+-- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 select throws_ok('select * from public.availability_blocks', '42501', null, 'anon: cannot read the table directly');
@@ -71,7 +71,7 @@ select throws_ok($$select * from public.get_blocked_dates('30000000-0000-0000-00
   '22023', null, 'anon: missing start date is rejected');
 reset role;
 
--- Outsider (authenticated, no profile) --------------------------------------
+-- Outsider (authenticated, no profile)
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}', true);
 set local role authenticated;
 select is_empty('select * from public.availability_blocks', 'outsider: sees no rows');
@@ -79,7 +79,7 @@ select throws_ok($$select public.block_dates('30000000-0000-0000-0000-0000000000
   '42501', null, 'outsider: block_dates is refused by RLS');
 reset role;
 
--- Team member ---------------------------------------------------------------
+-- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.availability_blocks), 4, 'team: sees all blocks (including drafts)');
@@ -100,7 +100,7 @@ select throws_ok($$select public.block_dates('30000000-0000-0000-0000-0000000000
   '22023', null, 'team: oversized range is rejected');
 reset role;
 
--- Owner ---------------------------------------------------------------------
+-- Owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is(public.block_dates('30000000-0000-0000-0000-000000000002', '2027-04-01', '2027-04-03'), 3,

@@ -1,4 +1,4 @@
--- audit_log and rate_limits: service role only; pruning jobs scheduled.
+-- audit_log and rate_limits
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -12,7 +12,7 @@ insert into public.admin_profiles (id, full_name, role) values
 insert into public.audit_log (actor_id, action, entity_type, entity_id) values
   ('00000000-0000-0000-0000-0000000000a1', 'login.ok', 'admin', '00000000-0000-0000-0000-0000000000a1');
 
--- Structure -----------------------------------------------------------------
+-- Structure
 select ok((select relrowsecurity from pg_class where oid = 'public.audit_log'::regclass), 'audit_log has RLS enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.rate_limits'::regclass), 'rate_limits has RLS enabled');
 select is((select count(*)::int from pg_policies where tablename = 'rate_limits'), 0, 'rate_limits has no policies');
@@ -42,7 +42,7 @@ select isnt_empty($$select 1 from cron.job where jobname = 'prune-audit-log'
   and command like '%audit_log%90 days%'$$, 'pg_cron prunes audit_log older than 90 days');
 select is_empty($$select 1 from cron.job where command like '%availability%'$$, 'availability is never pruned');
 
--- Anon ----------------------------------------------------------------------
+-- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 select throws_ok('select * from public.audit_log', '42501', null, 'anon: cannot read audit_log');
@@ -52,7 +52,7 @@ select throws_ok($$select public.rate_limit_hit('login', repeat('a', 32), 900, 5
   'anon: cannot call rate_limit_hit');
 reset role;
 
--- Team member ---------------------------------------------------------------
+-- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
 select is_empty('select id from public.audit_log', 'team: reads no audit rows');
@@ -60,7 +60,7 @@ select throws_ok($$insert into public.audit_log (action) values ('x')$$, '42501'
 select throws_ok($$delete from public.rate_limits$$, '42501', null, 'team: cannot clear rate_limits');
 reset role;
 
--- Owner ---------------------------------------------------------------------
+-- Owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.audit_log), 1, 'owner (aal2): can read the audit log');
@@ -76,7 +76,7 @@ set local role authenticated;
 select is_empty('select id from public.audit_log', 'owner without TOTP (aal1): reads no audit rows');
 reset role;
 
--- Service role: rate limit behaviour ----------------------------------------
+-- Service role: rate limit behaviour
 set local role service_role;
 select lives_ok($$insert into public.audit_log (action, metadata) values ('property.soft_delete', '{"property_id":"x"}')$$,
   'service_role: can write audit rows');

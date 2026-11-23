@@ -1,6 +1,4 @@
--- admin_profiles, is_admin(), is_owner(), list_active_admins()
--- Fixture users: a1 owner, a2 active team member, a3 inactive team member,
--- a4 authenticated user with no profile.
+-- Users: a1 owner, a2 team member, a3 inactive team member, a4 no profile.
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -15,7 +13,7 @@ insert into public.admin_profiles (id, full_name, role, is_active) values
   ('00000000-0000-0000-0000-0000000000a2', 'Test Team', 'team_member', true),
   ('00000000-0000-0000-0000-0000000000a3', 'Test Inactive', 'team_member', false);
 
--- Structure -----------------------------------------------------------------
+-- Structure
 select ok((select relrowsecurity from pg_class where oid = 'public.admin_profiles'::regclass),
   'admin_profiles has RLS enabled');
 select ok(not has_table_privilege('anon', 'public.admin_profiles', 'select,insert,update,delete,truncate'),
@@ -27,7 +25,7 @@ select ok(not has_function_privilege('anon', 'public.is_owner()', 'execute'), 'a
 select ok(not has_function_privilege('anon', 'public.list_active_admins()', 'execute'),
   'anon cannot execute list_active_admins()');
 
--- Anon ----------------------------------------------------------------------
+-- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 select throws_ok('select * from public.admin_profiles', '42501', null, 'anon: select admin_profiles is denied');
@@ -35,7 +33,7 @@ select throws_ok('select public.is_admin()', '42501', null, 'anon: is_admin() is
 select throws_ok('select * from public.list_active_admins()', '42501', null, 'anon: list_active_admins() is denied');
 reset role;
 
--- Team member ---------------------------------------------------------------
+-- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
 select is((select public.is_admin()), true, 'team: is_admin() is true');
@@ -58,7 +56,7 @@ reset role;
 select is((select role::text from public.admin_profiles where id = '00000000-0000-0000-0000-0000000000a2'),
   'team_member', 'team member role is unchanged');
 
--- Inactive team member and outsider -----------------------------------------
+-- Inactive team member and outsider
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a3","role":"authenticated"}', true);
 set local role authenticated;
 select is((select public.is_admin()), false, 'inactive: is_admin() is false');
@@ -71,7 +69,7 @@ select is((select public.is_admin()), false, 'outsider: is_admin() is false');
 select is_empty('select id from public.admin_profiles', 'outsider: sees no profiles');
 reset role;
 
--- Owner ---------------------------------------------------------------------
+-- Owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select public.is_owner()), true, 'owner: is_owner() is true');
@@ -88,7 +86,7 @@ set local role authenticated;
 select is((select public.is_admin()), false, 'deactivated team member: is_admin() is false at once');
 reset role;
 
--- Service role (server-side invitations) ------------------------------------
+-- Service role (server-side invitations)
 set local role service_role;
 select lives_ok($$insert into public.admin_profiles (id, full_name) values ('00000000-0000-0000-0000-0000000000a4', 'Invited')$$,
   'service_role: can create a profile (invitation route)');

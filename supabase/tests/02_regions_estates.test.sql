@@ -13,7 +13,7 @@ insert into public.admin_profiles (id, full_name, role) values
 insert into public.regions (id, slug, name) values
   ('10000000-0000-0000-0000-000000000001', 'drakensberg', 'Drakensberg');
 
--- Structure -----------------------------------------------------------------
+-- Structure
 select ok((select relrowsecurity from pg_class where oid = 'public.regions'::regclass), 'regions has RLS enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.estates'::regclass), 'estates has RLS enabled');
 select ok(has_table_privilege('anon', 'public.regions', 'select'), 'anon has select on regions');
@@ -22,7 +22,7 @@ select ok(has_table_privilege('anon', 'public.estates', 'select'), 'anon has sel
 select ok(not has_table_privilege('anon', 'public.estates', 'insert,update,delete,truncate'), 'anon has no write on estates');
 select ok(not has_table_privilege('authenticated', 'public.regions', 'truncate'), 'authenticated cannot truncate regions');
 
--- Anon: reads return rows or an empty set, never an error ------------------
+-- Anon: reads return rows or an empty set, never an error
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 select is_empty('select id from public.estates', 'anon: estates read returns an empty set (no error)');
@@ -34,7 +34,7 @@ select throws_ok($$insert into public.estates (region_id, slug, name) values ('1
   '42501', null, 'anon: cannot insert estates');
 reset role;
 
--- Owner: full write ----------------------------------------------------------
+-- Owner: full write
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select lives_ok($$insert into public.estates (id, region_id, slug, name) values
@@ -52,7 +52,7 @@ select throws_ok($$insert into public.regions (slug, name) values ('Bad Slug!', 
   'slug format is enforced');
 reset role;
 
--- Team member: read only -----------------------------------------------------
+-- Team member: read only
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
 select isnt_empty('select id from public.estates', 'team: can read estates');
@@ -65,7 +65,7 @@ select throws_ok($$insert into public.estates (region_id, slug, name) values ('1
 select is_empty($$update public.estates set name = 'Changed' returning id$$, 'team: cannot update estates');
 reset role;
 
--- Authenticated user with no admin profile ----------------------------------
+-- Authenticated user with no admin profile
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}', true);
 set local role authenticated;
 select isnt_empty('select id from public.regions', 'outsider: can read regions like the public');
@@ -73,7 +73,7 @@ select throws_ok($$insert into public.regions (slug, name) values ('outsider', '
   'outsider: cannot insert regions');
 reset role;
 
--- updated_at trigger ---------------------------------------------------------
+-- updated_at trigger
 update public.regions set updated_at = '2000-01-01' where slug = 'drakensberg';
 select ok((select updated_at > '2000-01-01' from public.regions where slug = 'drakensberg'),
   'updated_at is refreshed by the trigger');

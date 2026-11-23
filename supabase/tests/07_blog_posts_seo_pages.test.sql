@@ -1,4 +1,4 @@
--- blog_posts (public published only, admins write, owner-only soft delete) and seo_pages (public read, owner write).
+-- blog_posts and seo_pages
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -15,7 +15,7 @@ insert into public.blog_posts (id, slug, title, is_published, deleted_at) values
   ('60000000-0000-0000-0000-000000000002', 'draft-post', 'Draft', false, null),
   ('60000000-0000-0000-0000-000000000003', 'deleted-post', 'Deleted', true, now());
 
--- Structure -----------------------------------------------------------------
+-- Structure
 select ok((select relrowsecurity from pg_class where oid = 'public.blog_posts'::regclass), 'blog_posts has RLS enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.seo_pages'::regclass), 'seo_pages has RLS enabled');
 select ok(has_table_privilege('anon', 'public.blog_posts', 'select'), 'anon has select on blog_posts');
@@ -28,7 +28,7 @@ select is((select count(*)::int from public.seo_pages), 6, 'six static pages are
 select ok((select published_at is not null from public.blog_posts where slug = 'published-post'),
   'published_at is stamped automatically on publish');
 
--- Anon ----------------------------------------------------------------------
+-- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 select results_eq('select id from public.blog_posts',
@@ -38,7 +38,7 @@ select throws_ok($$insert into public.blog_posts (slug, title) values ('x', 'X')
 select throws_ok($$update public.seo_pages set title = 'X'$$, '42501', null, 'anon: cannot update seo_pages');
 reset role;
 
--- Team member ---------------------------------------------------------------
+-- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
 select results_eq('select id from public.blog_posts order by id',
@@ -62,14 +62,14 @@ reset role;
 select ok((select deleted_at is null from public.blog_posts where slug = 'team-post'), 'team-post is still not deleted');
 select ok((select deleted_at is not null from public.blog_posts where slug = 'deleted-post'), 'deleted-post is still deleted');
 
--- Outsider ------------------------------------------------------------------
+-- Outsider
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.blog_posts), 2, 'outsider: sees only published posts');
 select throws_ok($$insert into public.blog_posts (slug, title) values ('o', 'O')$$, '42501', null, 'outsider: cannot insert posts');
 reset role;
 
--- Owner ---------------------------------------------------------------------
+-- Owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.blog_posts), 4, 'owner: sees all posts, including soft-deleted');
@@ -83,7 +83,7 @@ select throws_ok($$delete from public.seo_pages where path = '/halal-guide'$$, '
   'owner: cannot delete page SEO rows (no DELETE grant)');
 reset role;
 
--- Constraints ---------------------------------------------------------------
+-- Constraints
 select throws_ok($$insert into public.seo_pages (path, title, description) values ('no-slash', 'T', 'D')$$, '23514', null,
   'seo_pages path must start with /');
 insert into public.blog_posts (slug, title, is_published) values ('x-post', 'X', false);

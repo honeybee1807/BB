@@ -1,4 +1,4 @@
--- Storage buckets: correct visibility and limits; no user-role write path.
+-- storage buckets
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -10,7 +10,7 @@ insert into public.admin_profiles (id, full_name, role) values
   ('00000000-0000-0000-0000-0000000000a1', 'Test Owner', 'owner'),
   ('00000000-0000-0000-0000-0000000000a2', 'Test Team', 'team_member');
 
--- Buckets -------------------------------------------------------------------
+-- Buckets
 select results_eq($$select id, public from storage.buckets
   where id in ('uploads-tmp', 'property-photos', 'blog-images') order by id$$,
   $$values ('blog-images'::text, true), ('property-photos'::text, true), ('uploads-tmp'::text, false)$$,
@@ -31,7 +31,7 @@ select is((select count(*)::int from pg_policies where schemaname = 'storage'), 
 -- A file the service role wrote, to test reads and deletes against.
 insert into storage.objects (bucket_id, name) values ('property-photos', 'p1/existing.webp'), ('uploads-tmp', 'tmp/raw.jpg');
 
--- Anon ----------------------------------------------------------------------
+-- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 select throws_ok($$insert into storage.objects (bucket_id, name) values ('property-photos', 'anon.webp')$$, '42501', null,
@@ -42,7 +42,7 @@ select is_empty($$select name from storage.objects$$, 'anon: cannot list objects
 select throws_ok($$delete from storage.objects$$, null, null, 'anon: direct deletes are refused (also tested through the Storage API)');
 reset role;
 
--- Team member and owner -----------------------------------------------------
+-- Team member and owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
 select throws_ok($$insert into storage.objects (bucket_id, name) values ('property-photos', 'team.webp')$$, '42501', null,

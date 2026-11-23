@@ -1,4 +1,4 @@
--- property_photos: public sees photos of published properties only; 20-photo cap; one cover.
+-- property_photos
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -21,13 +21,13 @@ insert into public.property_photos (id, property_id, storage_path, thumb_path, i
   ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'p2/a.webp', 'p2/a-thumb.webp', false),
   ('40000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000003', 'p3/a.webp', 'p3/a-thumb.webp', false);
 
--- Structure -----------------------------------------------------------------
+-- Structure
 select ok((select relrowsecurity from pg_class where oid = 'public.property_photos'::regclass), 'property_photos has RLS enabled');
 select ok(has_table_privilege('anon', 'public.property_photos', 'select'), 'anon has select on property_photos');
 select ok(not has_table_privilege('anon', 'public.property_photos', 'insert,update,delete,truncate'),
   'anon has no write on property_photos');
 
--- Anon ----------------------------------------------------------------------
+-- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 select results_eq('select id from public.property_photos',
@@ -38,7 +38,7 @@ select throws_ok($$insert into public.property_photos (property_id, storage_path
 select throws_ok($$delete from public.property_photos$$, '42501', null, 'anon: cannot delete');
 reset role;
 
--- Team member ---------------------------------------------------------------
+-- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
 select is((select count(*)::int from public.property_photos), 3, 'team: sees all photos');
@@ -51,14 +51,14 @@ select isnt_empty($$delete from public.property_photos where id = '40000000-0000
   'team: can delete a photo row');
 reset role;
 
--- Owner ---------------------------------------------------------------------
+-- Owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select isnt_empty($$delete from public.property_photos where id = '40000000-0000-0000-0000-000000000003' returning id$$,
   'owner: can delete a photo row');
 reset role;
 
--- Constraints ---------------------------------------------------------------
+-- Constraints
 select throws_ok($$insert into public.property_photos (property_id, storage_path, thumb_path, is_cover)
   values ('30000000-0000-0000-0000-000000000001', 'p1/b.webp', 'p1/b-t.webp', true)$$, '23505', null,
   'only one cover photo per property');

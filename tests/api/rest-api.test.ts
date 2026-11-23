@@ -1,9 +1,4 @@
-/**
- * Phase 2 REST and Storage API tests against the LOCAL Supabase stack.
- * Proves through the real Data API (PostgREST) and Storage API what the pgTAP
- * tests prove in SQL: anon, team member and owner see and do only what they should.
- * The owner counts as owner only in a TOTP-verified (aal2) session.
- */
+// REST and Storage API tests against the local Supabase stack.
 import { randomBytes, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { client, readLocalStack, signedInClient, type Db } from "./local-stack";
@@ -107,7 +102,7 @@ afterAll(async () => {
   for (const id of [ids.owner, ids.team, ids.recovery]) if (id) await admin.auth.admin.deleteUser(id);
 });
 
-describe("anon: public content tables return rows or an empty set, never an error", () => {
+describe("anon reads public tables without errors", () => {
   it("regions and estates are readable", async () => {
     const r = await anon.from("regions").select("id").eq("id", ids.region);
     expect(r.error).toBeNull();
@@ -157,7 +152,7 @@ describe("anon: public content tables return rows or an empty set, never an erro
   });
 });
 
-describe("anon: private tables are refused", () => {
+describe("anon is refused private tables", () => {
   const privateTables = ["inquiries", "availability_blocks", "admin_profiles", "audit_log", "rate_limits"] as const;
   for (const table of privateTables) {
     it(`${table}: select is refused with permission denied`, async () => {
@@ -186,7 +181,7 @@ describe("anon: private tables are refused", () => {
   });
 });
 
-describe("anon: functions", () => {
+describe("anon functions", () => {
   const range = { p_from: "2027-01-01", p_to: "2027-01-31" };
 
   it("get_blocked_dates returns blocked dates for a published property", async () => {
@@ -245,7 +240,7 @@ describe("storage through the Storage API", () => {
     expect(error).not.toBeNull();
   });
 
-  it("team member and owner cannot upload directly (server pipeline only)", async () => {
+  it("team member and owner cannot upload directly", async () => {
     for (const c of [team, owner]) {
       const { error } = await c.storage.from("property-photos").upload(`apitest/${run}/direct.webp`, webpBytes, { contentType: "image/webp" });
       expect(error).not.toBeNull();
@@ -262,14 +257,14 @@ describe("storage through the Storage API", () => {
     expect(data?.map((f) => f.name)).toContain("existing.webp");
   });
 
-  it("nobody but the server can list the private uploads-tmp bucket", async () => {
+  it("only the server can list uploads-tmp", async () => {
     for (const c of [anon, team, owner]) {
       const { data } = await c.storage.from("uploads-tmp").list();
       expect(data ?? []).toEqual([]);
     }
   });
 
-  it("a server-issued signed upload URL lets the browser upload to uploads-tmp, and a disallowed type is refused", async () => {
+  it("signed upload URL works and refuses HEIC", async () => {
     const tmpPath = `apitest/${run}/${randomUUID()}.webp`;
     const signed = must(await admin.storage.from("uploads-tmp").createSignedUploadUrl(tmpPath), "signed url");
     const ok = await anon.storage.from("uploads-tmp").uploadToSignedUrl(tmpPath, signed.token, webpBytes, { contentType: "image/webp" });
@@ -321,7 +316,7 @@ describe("team member through the API", () => {
     expect(audit.data).toEqual([]);
   });
 
-  it("can delete a property photo row (decision 1)", async () => {
+  it("can delete a property photo row", async () => {
     const inserted = await admin.from("property_photos")
       .insert({ property_id: ids.draft, storage_path: "team-del.webp", thumb_path: "team-del-t.webp" }).select("id").single();
     if (inserted.error) throw new Error(`photo: ${inserted.error.message}`);
@@ -369,25 +364,25 @@ describe("owner through the API", () => {
     expect((await owner.from("rate_limits").select("*").limit(1)).error?.code).toBe("42501");
   });
 
-  it("cannot delete page SEO rows (no DELETE grant)", async () => {
+  it("cannot delete page SEO rows either", async () => {
     expect((await owner.from("seo_pages").delete().eq("path", "/about")).error?.code).toBe("42501");
   });
 });
 
-describe("owner two-factor layer (aal2 required)", () => {
+describe("owner two-factor", () => {
   it("rpc is_owner: false at aal1, true at aal2", async () => {
     expect((await ownerAal1.rpc("is_owner")).data).toBe(false);
     expect((await ownerAal1.rpc("is_admin")).data).toBe(false);
     expect((await owner.rpc("is_owner")).data).toBe(true);
   });
 
-  it("owner at aal1 can read only their own profile, so the app can ask for TOTP", async () => {
+  it("owner at aal1 can read their own profile", async () => {
     const { data, error } = await ownerAal1.from("admin_profiles").select("id, role");
     expect(error).toBeNull();
     expect(data).toEqual([{ id: ids.owner, role: "owner" }]);
   });
 
-  it("owner at aal1 is refused: no inquiries, no writes, no soft delete, no audit log", async () => {
+  it("owner at aal1 gets no access", async () => {
     expect((await ownerAal1.from("inquiries").select("id")).data).toEqual([]);
     expect((await ownerAal1.from("regions").insert({ slug: slug("aal1"), name: "X" })).error?.code).toBe("42501");
     const del = await ownerAal1.from("properties").update({ deleted_at: new Date().toISOString() }).eq("id", ids.draft).select("id");
@@ -395,7 +390,7 @@ describe("owner two-factor layer (aal2 required)", () => {
     expect((await ownerAal1.from("audit_log").select("id")).data).toEqual([]);
   });
 
-  it("the recovery owner can enrol TOTP from an aal1 session (no owner rights needed) and then act as owner", async () => {
+  it("recovery owner can enrol TOTP at aal1", async () => {
     ids.recovery = await createAdminUser(recoveryEmail);
     check(await admin.from("admin_profiles").insert({ id: ids.recovery, full_name: "API Recovery Owner", role: "owner" }), "recovery");
     const recovery = await signedInClient(stack, recoveryEmail, password);

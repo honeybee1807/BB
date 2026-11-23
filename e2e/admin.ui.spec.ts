@@ -37,7 +37,7 @@ async function signIn(page: Page, user: TestUser) {
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-test("login page is accessible, validates input and shows a neutral error", async ({ page }) => {
+test("login form validates input and shows a neutral error", async ({ page }) => {
   await page.goto("/admin/login");
   await expect(page.getByRole("heading", { name: "Admin sign in" })).toBeVisible();
   await expectNoA11yViolations(page);
@@ -51,7 +51,7 @@ test("login page is accessible, validates input and shows a neutral error", asyn
   await expect(page.getByRole("alert").filter({ hasText: "Email or password is incorrect." })).toBeVisible();
 });
 
-test("team member signs in to a role-aware, accessible dashboard", async ({ page, isMobile }) => {
+test("team member sees the dashboard without owner links", async ({ page, isMobile }) => {
   await signIn(page, team);
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByRole("heading", { name: "Welcome, Amina" })).toBeVisible();
@@ -75,7 +75,7 @@ test("team member signs in to a role-aware, accessible dashboard", async ({ page
   await expect(page.getByRole("heading", { name: "Inquiries" })).toBeVisible();
 });
 
-test("owner must set up two-factor in the browser, then sees owner pages", async ({ page }) => {
+test("owner sets up two-factor before reaching the dashboard", async ({ page }) => {
   await signIn(page, owner);
   await expect(page).toHaveURL(/\/admin\/mfa$/);
   await expect(page.getByRole("heading", { name: "Set up two-factor sign-in" })).toBeVisible();

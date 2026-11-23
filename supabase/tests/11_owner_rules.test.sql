@@ -1,6 +1,4 @@
--- Phase 2 review changes: TOTP (aal2) layer, last-owner protection, photo deletes by team,
--- owner-read audit log, featured_image_alt, seo_pages delete removed, anon deleted_at filters.
--- Fixtures: a1 owner, a5 recovery owner, a2 team (no factor), a6 team with a verified TOTP factor.
+-- Users: a1 owner, a5 recovery owner, a2 team member, a6 team member with TOTP.
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -25,7 +23,7 @@ insert into public.properties (id, estate_id, slug, name, is_published) values
 insert into public.inquiries (id, guest_name, guest_email, guest_phone, check_in, check_out, adults, consent_given_at) values
   ('50000000-0000-0000-0000-000000000001', 'Guest One', 'one@example.com', '0820000001', '2027-01-10', '2027-01-14', 2, now());
 
--- TOTP layer: owner at aal1 is refused ---------------------------------------
+-- TOTP layer: owner at aal1 is refused
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal1"}', true);
 set local role authenticated;
 select is((select public.is_owner()), false, 'owner at aal1: is_owner() is false');
@@ -52,7 +50,7 @@ select results_eq($$select role::text from public.admin_profiles$$, $$values ('o
   'recovery owner at aal1: can read own profile to start enrolment');
 reset role;
 
--- TOTP layer: aal2 is allowed --------------------------------------------------
+-- TOTP layer: aal2 is allowed
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select public.is_owner()), true, 'owner at aal2: is_owner() is true');
@@ -65,7 +63,7 @@ set local role authenticated;
 select is((select public.is_owner()), true, 'recovery owner at aal2: is_owner() is true');
 reset role;
 
--- Team members: optional TOTP ---------------------------------------------------
+-- Team members: optional TOTP
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated","aal":"aal1"}', true);
 set local role authenticated;
 select is((select public.is_admin()), true, 'team without a factor at aal1: is_admin() is true');
@@ -84,7 +82,7 @@ select is((select public.is_admin()), true, 'team with a factor at aal2: is_admi
 select is((select public.is_owner()), false, 'team at aal2: is_owner() is still false');
 reset role;
 
--- Last active owner -----------------------------------------------------------
+-- Last active owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select lives_ok($$update public.admin_profiles set role = 'team_member' where id = '00000000-0000-0000-0000-0000000000a5'$$,
@@ -106,7 +104,7 @@ select lives_ok($$update public.admin_profiles set is_active = false where id = 
 select throws_ok($$update public.admin_profiles set role = 'team_member' where id = '00000000-0000-0000-0000-0000000000a5'$$,
   '23514', null, 'an inactive owner does not count as a remaining owner');
 
--- Columns and grants -----------------------------------------------------------
+-- Columns and grants
 select has_column('public', 'blog_posts', 'featured_image_alt', 'blog_posts has featured_image_alt');
 select col_is_null('public', 'blog_posts', 'featured_image_alt', 'featured_image_alt is nullable (UI falls back to the title)');
 select has_column('public', 'property_photos', 'alt_text', 'property_photos has alt_text');
@@ -116,7 +114,7 @@ select is((select count(*)::int from pg_policies where tablename = 'seo_pages' a
 select is((select count(*)::int from pg_policies where tablename = 'property_photos' and cmd = 'DELETE'
   and qual like '%is_admin%'), 1, 'property_photos delete policy is for admins (team may delete photos)');
 
--- Anon policies filter soft-deleted rows ------------------------------------
+-- Anon policies filter soft-deleted rows
 select ok((select qual like '%deleted_at IS NULL%' from pg_policies
   where tablename = 'properties' and 'anon' = any(roles)), 'anon properties policy requires deleted_at is null');
 select ok((select qual like '%deleted_at IS NULL%' from pg_policies

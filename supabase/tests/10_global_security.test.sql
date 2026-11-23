@@ -1,4 +1,4 @@
--- Project-wide guards: catch any future table or function that skips the rules.
+-- Catches any new table or function that skips the rules.
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -9,7 +9,7 @@ select tables_are('public', array[
 ], 'public schema holds exactly the approved tables');
 
 select is_empty($$select tablename from pg_tables where schemaname = 'public' and not rowsecurity$$,
-  'every public table has RLS enabled (guide section 14 check)');
+  'every public table has RLS enabled');
 
 select is((
   select array_agg(c.relname::text order by c.relname::text) from pg_class c
