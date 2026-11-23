@@ -11,10 +11,7 @@ export default async function DashboardPage() {
   const firstName = identity.fullName.split(" ")[0] ?? identity.fullName;
   return (
     <>
-      <PageHeader
-        title={`Welcome, ${firstName}`}
-        description="Inquiries, availability and recent activity at a glance."
-      />
+      <PageHeader title="Dashboard" description={`Welcome back, ${firstName}`} />
       <NotBuiltYet />
     </>
   );

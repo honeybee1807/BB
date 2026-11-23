@@ -54,13 +54,17 @@ test("login form validates input and shows a neutral error", async ({ page }) =>
 test("team member sees the dashboard without owner links", async ({ page, isMobile }) => {
   await signIn(page, team);
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByRole("heading", { name: "Welcome, Amina" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByText("Welcome back, Amina")).toBeVisible();
 
   if (isMobile) {
     const menu = page.getByRole("button", { name: "Open menu" });
     await expect(menu).toBeVisible();
     await menu.click();
-    await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("dialog", { name: /Admin menu/ })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await menu.click();
   }
   const nav = page.getByRole("navigation", { name: "Admin" });
   await expect(nav.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
@@ -90,8 +94,8 @@ test("owner sets up two-factor before reaching the dashboard", async ({ page }) 
   await page.getByLabel("Authentication code").fill(totpCode(secret));
   await page.getByRole("button", { name: "Verify" }).click();
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByRole("heading", { name: "Welcome, Naledi" })).toBeVisible();
-  const nav = page.getByRole("navigation", { name: "Admin" });
+  await expect(page.getByText("Welcome back, Naledi")).toBeVisible();
+  const nav = page.getByRole("navigation", { name: "Admin", includeHidden: true });
   await expect(nav.getByRole("link", { name: "Team", includeHidden: true })).toHaveCount(1);
   await expect(nav.getByRole("link", { name: "Settings", includeHidden: true })).toHaveCount(1);
 });
