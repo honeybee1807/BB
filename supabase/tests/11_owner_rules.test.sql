@@ -15,11 +15,11 @@ insert into public.admin_profiles (id, full_name, role) values
   ('00000000-0000-0000-0000-0000000000a6', 'Team With TOTP', 'team_member');
 insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at) values
   (gen_random_uuid(), '00000000-0000-0000-0000-0000000000a6', 'phone', 'totp', 'verified', now(), now());
-insert into public.regions (id, slug, name) values ('10000000-0000-0000-0000-000000000001', 'drakensberg', 'Drakensberg');
+insert into public.regions (id, slug, name) values ('10000000-0000-0000-0000-000000000001', 'pgtap-drakensberg', 'Drakensberg');
 insert into public.estates (id, region_id, slug, name) values
-  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'cathkin-estate', 'Cathkin Estate');
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'pgtap-cathkin-estate', 'Cathkin Estate');
 insert into public.properties (id, estate_id, slug, name, is_published) values
-  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'published-home', 'Published', true);
+  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'pgtap-published-home', 'Published', true);
 insert into public.inquiries (id, guest_name, guest_email, guest_phone, check_in, check_out, adults, consent_given_at) values
   ('50000000-0000-0000-0000-000000000001', 'Guest One', 'one@example.com', '0820000001', '2027-01-10', '2027-01-14', 2, now());
 
@@ -83,6 +83,10 @@ select is((select public.is_owner()), false, 'team at aal2: is_owner() is still 
 reset role;
 
 -- Last active owner
+-- Other local admins would count as remaining owners. The transaction rolls this back.
+update public.admin_profiles set is_active = false
+  where id not in ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a5',
+                   '00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-0000000000a6');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select lives_ok($$update public.admin_profiles set role = 'team_member' where id = '00000000-0000-0000-0000-0000000000a5'$$,

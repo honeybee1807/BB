@@ -9,13 +9,13 @@ insert into auth.users (id, email) values
 insert into public.admin_profiles (id, full_name, role) values
   ('00000000-0000-0000-0000-0000000000a1', 'Test Owner', 'owner'),
   ('00000000-0000-0000-0000-0000000000a2', 'Test Team', 'team_member');
-insert into public.regions (id, slug, name) values ('10000000-0000-0000-0000-000000000001', 'drakensberg', 'Drakensberg');
+insert into public.regions (id, slug, name) values ('10000000-0000-0000-0000-000000000001', 'pgtap-drakensberg', 'Drakensberg');
 insert into public.estates (id, region_id, slug, name) values
-  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'cathkin-estate', 'Cathkin Estate');
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'pgtap-cathkin-estate', 'Cathkin Estate');
 insert into public.properties (id, estate_id, slug, name, is_published, deleted_at) values
-  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'published-home', 'Published', true, null),
-  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'draft-home', 'Draft', false, null),
-  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 'deleted-home', 'Deleted', true, now());
+  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'pgtap-published-home', 'Published', true, null),
+  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'pgtap-draft-home', 'Draft', false, null),
+  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 'pgtap-deleted-home', 'Deleted', true, now());
 insert into public.property_photos (id, property_id, storage_path, thumb_path, is_cover) values
   ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'p1/a.webp', 'p1/a-thumb.webp', true),
   ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'p2/a.webp', 'p2/a-thumb.webp', false),
@@ -30,7 +30,7 @@ select ok(not has_table_privilege('anon', 'public.property_photos', 'insert,upda
 -- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
-select results_eq('select id from public.property_photos',
+select results_eq($$select id from public.property_photos where id::text like '40000000-%'$$,
   $$values ('40000000-0000-0000-0000-000000000001'::uuid)$$,
   'anon: sees only photos of published, non-deleted properties (no error)');
 select throws_ok($$insert into public.property_photos (property_id, storage_path, thumb_path)
@@ -41,7 +41,7 @@ reset role;
 -- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
-select is((select count(*)::int from public.property_photos), 3, 'team: sees all photos');
+select is((select count(*)::int from public.property_photos where id::text like '40000000-%'), 3, 'team: sees all photos');
 select lives_ok($$insert into public.property_photos (property_id, storage_path, thumb_path, alt_text)
   values ('30000000-0000-0000-0000-000000000002', 'p2/b.webp', 'p2/b-thumb.webp', 'Halal accommodation lounge')$$,
   'team: can add a photo');

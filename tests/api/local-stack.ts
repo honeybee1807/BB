@@ -35,3 +35,13 @@ export async function signedInClient(stack: LocalStack, email: string, password:
   if (error) throw new Error(`Sign-in failed for test user: ${error.message}`);
   return c;
 }
+
+// The local gateway on Docker for Windows sometimes drops a kept-alive connection; one retry covers it.
+export async function createAuthUser(db: Db, email: string, password: string): Promise<string> {
+  for (let attempt = 1; ; attempt++) {
+    const { data, error } = await db.auth.admin.createUser({ email, password, email_confirm: true });
+    if (data.user) return data.user.id;
+    if (attempt === 1 && error?.name === "AuthRetryableFetchError") continue;
+    throw new Error(`create user: ${error?.message ?? "no user"}`);
+  }
+}

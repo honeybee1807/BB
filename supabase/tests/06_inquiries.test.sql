@@ -49,7 +49,7 @@ reset role;
 -- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
-select results_eq('select id from public.inquiries order by id',
+select results_eq($$select id from public.inquiries where id::text like '50000000-%' order by id$$,
   $$values ('50000000-0000-0000-0000-000000000001'::uuid), ('50000000-0000-0000-0000-000000000002'::uuid)$$,
   'team: sees all non-deleted inquiries');
 select isnt_empty($$update public.inquiries set status = 'in_progress', assigned_to = '00000000-0000-0000-0000-0000000000a2',
@@ -76,7 +76,7 @@ select is((select status::text from public.inquiries where id = '50000000-0000-0
 -- Owner
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
-select is((select count(*)::int from public.inquiries), 3, 'owner: sees all inquiries, including soft-deleted');
+select is((select count(*)::int from public.inquiries where id::text like '50000000-%'), 3, 'owner: sees all inquiries, including soft-deleted');
 select isnt_empty($$update public.inquiries set deleted_at = now() where id = '50000000-0000-0000-0000-000000000002' returning id$$,
   'owner: can soft delete');
 select isnt_empty($$update public.inquiries set deleted_at = null where id = '50000000-0000-0000-0000-000000000003' returning id$$,

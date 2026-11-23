@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
 import { request, type APIRequestContext } from "@playwright/test";
 import { hashIdentifier } from "../src/lib/security/hash";
-import { client, readLocalStack } from "../tests/api/local-stack";
+import { client, createAuthUser, readLocalStack } from "../tests/api/local-stack";
 
 // Cleanup needs the same hash secret as the dev server.
 if (!process.env.IP_HASH_SECRET) {
@@ -34,9 +34,7 @@ export async function createUser(
   profile?: { role: "owner" | "team_member"; isActive?: boolean; fullName?: string },
 ): Promise<TestUser> {
   const email = `e2e-${label}-${run}@test.local`;
-  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
-  if (error || !data.user) throw new Error(`create user ${label}: ${error?.message ?? "no user"}`);
-  const user = { id: data.user.id, email };
+  const user = { id: await createAuthUser(admin, email, password), email };
   created.push(user);
   usedEmails.push(email);
   if (profile) {

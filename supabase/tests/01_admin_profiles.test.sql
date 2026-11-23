@@ -1,4 +1,5 @@
 -- Users: a1 owner, a2 team member, a3 inactive team member, a4 no profile.
+-- Counts only include these users, so other local accounts never change the results.
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
@@ -40,7 +41,9 @@ select is((select public.is_admin()), true, 'team: is_admin() is true');
 select is((select public.is_owner()), false, 'team: is_owner() is false');
 select results_eq('select id from public.admin_profiles',
   $$values ('00000000-0000-0000-0000-0000000000a2'::uuid)$$, 'team: sees only own profile');
-select is((select count(*)::int from public.list_active_admins()), 2,
+select is((select count(*)::int from public.list_active_admins()
+  where id in ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a2',
+                '00000000-0000-0000-0000-0000000000a3')), 2,
   'team: list_active_admins() returns the 2 active admins (id and name only)');
 select is_empty($$update public.admin_profiles set role = 'owner'
   where id = '00000000-0000-0000-0000-0000000000a2' returning id$$, 'team: cannot promote self to owner');
@@ -73,7 +76,9 @@ reset role;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select is((select public.is_owner()), true, 'owner: is_owner() is true');
-select is((select count(*)::int from public.admin_profiles), 3, 'owner: sees all profiles');
+select is((select count(*)::int from public.admin_profiles
+  where id in ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a2',
+                '00000000-0000-0000-0000-0000000000a3')), 3, 'owner: sees all profiles');
 select isnt_empty($$update public.admin_profiles set is_active = false
   where id = '00000000-0000-0000-0000-0000000000a2' returning id$$, 'owner: can deactivate a team member');
 select throws_ok($$delete from public.admin_profiles where id = '00000000-0000-0000-0000-0000000000a3'$$,

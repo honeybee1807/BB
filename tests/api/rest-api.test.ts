@@ -1,7 +1,7 @@
 // REST and Storage API tests against the local Supabase stack.
 import { randomBytes, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { client, readLocalStack, signedInClient, type Db } from "./local-stack";
+import { client, createAuthUser, readLocalStack, signedInClient, type Db } from "./local-stack";
 import { enrolAndVerifyTotp } from "./totp";
 
 const stack = readLocalStack();
@@ -44,10 +44,8 @@ function check(result: { error: { message: string } | null }, what: string): voi
   if (result.error) throw new Error(`${what}: ${result.error.message}`);
 }
 
-async function createAdminUser(email: string): Promise<string> {
-  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
-  if (error || !data.user) throw new Error(`create user: ${error?.message ?? "no user"}`);
-  return data.user.id;
+function createAdminUser(email: string): Promise<string> {
+  return createAuthUser(admin, email, password);
 }
 
 beforeAll(async () => {
@@ -497,13 +495,26 @@ describe("owner two-factor", () => {
   });
 
   it("the last active owner cannot be demoted or deactivated", async () => {
-    const off = await owner.from("admin_profiles").update({ is_active: false }).eq("id", ids.recovery).select("id");
-    expect(off.data).toEqual([{ id: ids.recovery }]);
-    const self = await owner.from("admin_profiles").update({ role: "team_member" }).eq("id", ids.owner);
-    expect(self.error?.code).toBe("23514");
-    const deactivate = await owner.from("admin_profiles").update({ is_active: false }).eq("id", ids.owner);
-    expect(deactivate.error?.code).toBe("23514");
-    const back = await owner.from("admin_profiles").update({ is_active: true }).eq("id", ids.recovery).select("id");
-    expect(back.data).toEqual([{ id: ids.recovery }]);
+    // Other local owners would count as remaining owners, so they sit out this test.
+    const others = await admin
+      .from("admin_profiles")
+      .update({ is_active: false })
+      .eq("role", "owner")
+      .eq("is_active", true)
+      .not("id", "in", `(${ids.owner},${ids.recovery})`)
+      .select("id");
+    const otherIds = (others.data ?? []).map((o) => o.id);
+    try {
+      const off = await owner.from("admin_profiles").update({ is_active: false }).eq("id", ids.recovery).select("id");
+      expect(off.data).toEqual([{ id: ids.recovery }]);
+      const self = await owner.from("admin_profiles").update({ role: "team_member" }).eq("id", ids.owner);
+      expect(self.error?.code).toBe("23514");
+      const deactivate = await owner.from("admin_profiles").update({ is_active: false }).eq("id", ids.owner);
+      expect(deactivate.error?.code).toBe("23514");
+      const back = await owner.from("admin_profiles").update({ is_active: true }).eq("id", ids.recovery).select("id");
+      expect(back.data).toEqual([{ id: ids.recovery }]);
+    } finally {
+      if (otherIds.length) await admin.from("admin_profiles").update({ is_active: true }).in("id", otherIds);
+    }
   });
 });

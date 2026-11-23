@@ -29,7 +29,7 @@ select is((select count(*)::int from pg_policies where schemaname = 'storage' an
 select is((select count(*)::int from pg_policies where schemaname = 'storage'), 0, 'no storage policies at all');
 
 -- A file the service role wrote, to test reads and deletes against.
-insert into storage.objects (bucket_id, name) values ('property-photos', 'p1/existing.webp'), ('uploads-tmp', 'tmp/raw.jpg');
+insert into storage.objects (bucket_id, name) values ('property-photos', 'pgtap/existing.webp'), ('uploads-tmp', 'pgtap/raw.jpg');
 
 -- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
@@ -61,7 +61,7 @@ select throws_ok($$insert into storage.objects (bucket_id, name) values ('proper
 select throws_ok($$delete from storage.objects$$, null, null, 'owner: direct deletes are refused (also tested through the Storage API)');
 reset role;
 
-select is((select count(*)::int from storage.objects), 2, 'both service-written objects still exist');
+select is((select count(*)::int from storage.objects where name like 'pgtap/%'), 2, 'both service-written objects still exist');
 
 select * from finish();
 rollback;

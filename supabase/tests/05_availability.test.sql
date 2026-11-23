@@ -10,13 +10,13 @@ insert into auth.users (id, email) values
 insert into public.admin_profiles (id, full_name, role) values
   ('00000000-0000-0000-0000-0000000000a1', 'Test Owner', 'owner'),
   ('00000000-0000-0000-0000-0000000000a2', 'Test Team', 'team_member');
-insert into public.regions (id, slug, name) values ('10000000-0000-0000-0000-000000000001', 'drakensberg', 'Drakensberg');
+insert into public.regions (id, slug, name) values ('10000000-0000-0000-0000-000000000001', 'pgtap-drakensberg', 'Drakensberg');
 insert into public.estates (id, region_id, slug, name) values
-  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'cathkin-estate', 'Cathkin Estate');
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'pgtap-cathkin-estate', 'Cathkin Estate');
 insert into public.properties (id, estate_id, slug, name, is_published, deleted_at) values
-  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'published-home', 'Published', true, null),
-  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'draft-home', 'Draft', false, null),
-  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 'deleted-home', 'Deleted', true, now());
+  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'pgtap-published-home', 'Published', true, null),
+  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'pgtap-draft-home', 'Draft', false, null),
+  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 'pgtap-deleted-home', 'Deleted', true, now());
 insert into public.availability_blocks (property_id, date) values
   ('30000000-0000-0000-0000-000000000001', '2027-01-10'),
   ('30000000-0000-0000-0000-000000000001', '2027-01-11'),
@@ -82,7 +82,7 @@ reset role;
 -- Team member
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a2","role":"authenticated"}', true);
 set local role authenticated;
-select is((select count(*)::int from public.availability_blocks), 4, 'team: sees all blocks (including drafts)');
+select is((select count(*)::int from public.availability_blocks where property_id::text like '30000000-%'), 4, 'team: sees all blocks (including drafts)');
 select is(public.block_dates('30000000-0000-0000-0000-000000000001', '2027-01-09', '2027-01-12'), 2,
   'team: blocking a range inserts only the missing nights');
 select is(public.block_dates('30000000-0000-0000-0000-000000000001', '2027-01-09', '2027-01-12'), 0,
