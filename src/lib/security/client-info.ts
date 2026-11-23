@@ -7,7 +7,7 @@ export function getClientIp(headers: Headers): string {
   return "unknown";
 }
 
-export function approximateLocation(headers: Headers): string {
+export function guessLocation(headers: Headers): string {
   const decode = (v: string | null) => {
     if (!v) return "";
     try {
@@ -22,7 +22,7 @@ export function approximateLocation(headers: Headers): string {
   return parts.length > 0 ? parts.join(", ") : "Unknown location";
 }
 
-export function describeDevice(userAgent: string | null): string {
+export function deviceName(userAgent: string | null): string {
   if (!userAgent) return "Unknown device";
   const ua = userAgent;
   const browser = /Edg\//.test(ua)

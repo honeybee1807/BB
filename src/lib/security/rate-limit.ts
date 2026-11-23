@@ -1,8 +1,8 @@
 import "server-only";
 import { getAdminClient } from "@/lib/supabase/admin";
 
-export const LOGIN_FAILURE_LIMIT = { max: 5, windowSeconds: 15 * 60 } as const;
-export const MFA_FAILURE_LIMIT = { max: 5, windowSeconds: 15 * 60 } as const;
+export const LOGIN_LIMIT = { max: 5, windowSeconds: 15 * 60 } as const;
+export const MFA_LIMIT = { max: 5, windowSeconds: 15 * 60 } as const;
 
 type RateLimitBucket = "login_fail_email" | "login_fail_ip" | "mfa_fail_user";
 

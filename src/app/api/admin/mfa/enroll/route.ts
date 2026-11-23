@@ -1,4 +1,4 @@
-import { requireActiveAdminAnyLevel } from "@/lib/auth/admin-session";
+import { requireSignedInAdmin } from "@/lib/auth/admin-session";
 import { json, readJsonBody, responses } from "@/lib/http";
 import { audit } from "@/lib/security/audit";
 import { isSameOrigin } from "@/lib/security/origin";
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   if (!isSameOrigin(request)) return responses.forbiddenOrigin();
   if (!mfaEnrolSchema.safeParse((await readJsonBody(request)) ?? {}).success) return responses.badRequest();
 
-  const auth = await requireActiveAdminAnyLevel();
+  const auth = await requireSignedInAdmin();
   if (auth instanceof Response) return auth;
   const { identity, supabase } = auth;
 

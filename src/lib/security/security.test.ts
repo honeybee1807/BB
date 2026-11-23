@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { approximateLocation, describeDevice, getClientIp } from "./client-info";
+import { guessLocation, deviceName, getClientIp } from "./client-info";
 import { hashIdentifier } from "./hash";
 import { isSameOrigin } from "./origin";
 
@@ -74,12 +74,12 @@ describe("client info", () => {
     expect(getClientIp(new Headers())).toBe("unknown");
   });
   it("builds an approximate location from Vercel geo headers", () => {
-    expect(approximateLocation(new Headers({ "x-vercel-ip-city": "Cape%20Town", "x-vercel-ip-country": "ZA" }))).toBe("Cape Town, ZA");
-    expect(approximateLocation(new Headers())).toBe("Unknown location");
+    expect(guessLocation(new Headers({ "x-vercel-ip-city": "Cape%20Town", "x-vercel-ip-country": "ZA" }))).toBe("Cape Town, ZA");
+    expect(guessLocation(new Headers())).toBe("Unknown location");
   });
   it("describes common devices", () => {
-    expect(describeDevice("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit Version/18.0 Mobile Safari/604.1")).toBe("Safari on iOS");
-    expect(describeDevice("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36 Edg/140.0")).toBe("Edge on Windows");
-    expect(describeDevice(null)).toBe("Unknown device");
+    expect(deviceName("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit Version/18.0 Mobile Safari/604.1")).toBe("Safari on iOS");
+    expect(deviceName("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36 Edg/140.0")).toBe("Edge on Windows");
+    expect(deviceName(null)).toBe("Unknown device");
   });
 });

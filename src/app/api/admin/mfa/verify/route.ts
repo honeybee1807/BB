@@ -1,5 +1,5 @@
 import { after } from "next/server";
-import { requireActiveAdminAnyLevel } from "@/lib/auth/admin-session";
+import { requireSignedInAdmin } from "@/lib/auth/admin-session";
 import { sendSecurityAlert } from "@/lib/email/send";
 import { lockoutAlertEmail } from "@/lib/email/templates";
 import { json, readJsonBody, responses } from "@/lib/http";
@@ -7,7 +7,7 @@ import { audit } from "@/lib/security/audit";
 import { getClientIp } from "@/lib/security/client-info";
 import { hashIdentifier } from "@/lib/security/hash";
 import { isSameOrigin } from "@/lib/security/origin";
-import { MFA_FAILURE_LIMIT, clearEvents, countEvents, recordEvent } from "@/lib/security/rate-limit";
+import { MFA_LIMIT, clearEvents, countEvents, recordEvent } from "@/lib/security/rate-limit";
 import { mfaVerifySchema } from "@/lib/validation/auth";
 
 const LOCKED = "Too many incorrect codes. Please wait 15 minutes and try again.";
@@ -17,13 +17,13 @@ export async function POST(request: Request) {
   const parsed = mfaVerifySchema.safeParse(await readJsonBody(request));
   if (!parsed.success) return responses.badRequest("Enter the 6-digit code from your authenticator app.");
 
-  const auth = await requireActiveAdminAnyLevel();
+  const auth = await requireSignedInAdmin();
   if (auth instanceof Response) return auth;
   const { identity, supabase } = auth;
 
   const userKey = hashIdentifier("user", identity.userId);
   const ipHash = hashIdentifier("ip", getClientIp(request.headers));
-  const { max, windowSeconds } = MFA_FAILURE_LIMIT;
+  const { max, windowSeconds } = MFA_LIMIT;
 
   let failures: number;
   try {
