@@ -73,3 +73,14 @@ export async function requireSignedInAdmin(): Promise<ApiAuth | Response> {
   if (state.status === "not_admin") return Response.json({ ok: false, error: "Not found." }, { status: 404 });
   return { identity: state.identity, supabase: await createClient() };
 }
+
+// Admin actions also need two-factor finished where it applies. RLS checks the same thing.
+export async function requireActiveAdmin(): Promise<ApiAuth | Response> {
+  const state = await getSessionState();
+  if (state.status === "signed_out")
+    return Response.json({ ok: false, error: "Please sign in again." }, { status: 401 });
+  if (state.status === "not_admin") return Response.json({ ok: false, error: "Not found." }, { status: 404 });
+  if (state.status === "mfa_required")
+    return Response.json({ ok: false, error: "Please finish two-factor sign-in first." }, { status: 403 });
+  return { identity: state.identity, supabase: await createClient() };
+}

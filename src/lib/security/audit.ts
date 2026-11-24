@@ -12,7 +12,12 @@ type AuditAction =
   | "mfa.enrol_started"
   | "mfa.verified"
   | "mfa.failed"
-  | "mfa.lockout";
+  | "mfa.lockout"
+  | "inquiry.status"
+  | "inquiry.assign"
+  | "inquiry.notes"
+  | "availability.block"
+  | "availability.open";
 
 type AuditEntry = {
   actorId: string | null;
