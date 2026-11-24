@@ -2,6 +2,7 @@ import "server-only";
 import { addDays, todayInSast } from "@/lib/format";
 import { openRate, type InquiryStatus } from "@/lib/admin-format";
 import type { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
 
 // Every read uses the signed-in user's session, so RLS decides what they see.
 type UserClient = Awaited<ReturnType<typeof createClient>>;
@@ -201,4 +202,92 @@ export async function dashboardCounts(supabase: UserClient): Promise<DashboardCo
     rate(addDays(today, -30), addDays(today, -1)),
   ]);
   return { total: [t1, t0], answered: [a1, a0], fresh: [f1, f0], rate: [r1, r0] };
+}
+
+type Row<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"];
+
+export type RegionWithEstates = Row<"regions"> & { estates: Row<"estates">[] };
+
+export async function regionsWithEstates(supabase: UserClient): Promise<RegionWithEstates[]> {
+  const { data, error } = await supabase
+    .from("regions")
+    .select("*, estates(*)")
+    .order("sort_order")
+    .order("name")
+    .order("sort_order", { referencedTable: "estates" })
+    .order("name", { referencedTable: "estates" });
+  if (error) failed("regions");
+  return data;
+}
+
+export type PropertyListRow = Pick<
+  Row<"properties">,
+  "id" | "estate_id" | "name" | "slug" | "is_published" | "is_halal" | "max_guests" | "updated_at"
+> & { estate: { name: string; region: { name: string } }; photos: { thumb_path: string; is_cover: boolean }[] };
+
+export async function listPropertiesAdmin(supabase: UserClient): Promise<PropertyListRow[]> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select(
+      "id, estate_id, name, slug, is_published, is_halal, max_guests, updated_at, estate:estates!inner(name, region:regions!inner(name)), photos:property_photos(thumb_path, is_cover)",
+    )
+    .is("deleted_at", null)
+    .order("name");
+  if (error) failed("homes");
+  return data;
+}
+
+export type PropertyPhoto = Pick<
+  Row<"property_photos">,
+  "id" | "storage_path" | "thumb_path" | "alt_text" | "sort_order" | "is_cover" | "width" | "height"
+>;
+
+export type PropertyForEdit = Row<"properties"> & { photos: PropertyPhoto[] };
+
+export async function getPropertyAdmin(supabase: UserClient, id: string): Promise<PropertyForEdit | null> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("*, photos:property_photos(id, storage_path, thumb_path, alt_text, sort_order, is_cover, width, height)")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .order("sort_order", { referencedTable: "property_photos" })
+    .maybeSingle();
+  if (error) failed("home");
+  return data;
+}
+
+export type PostListRow = Pick<
+  Row<"blog_posts">,
+  "id" | "title" | "slug" | "is_published" | "published_at" | "updated_at"
+>;
+
+export async function listPostsAdmin(supabase: UserClient): Promise<PostListRow[]> {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("id, title, slug, is_published, published_at, updated_at")
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false });
+  if (error) failed("journal posts");
+  return data;
+}
+
+export async function getPostAdmin(supabase: UserClient, id: string): Promise<Row<"blog_posts"> | null> {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("*")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error) failed("journal post");
+  return data;
+}
+
+export async function listTestimonialsAdmin(supabase: UserClient): Promise<Row<"testimonials">[]> {
+  const { data, error } = await supabase
+    .from("testimonials")
+    .select("*")
+    .order("sort_order")
+    .order("created_at", { ascending: false });
+  if (error) failed("testimonials");
+  return data;
 }

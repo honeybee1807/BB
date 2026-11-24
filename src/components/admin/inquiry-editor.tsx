@@ -64,7 +64,7 @@ export function InquiryEditor({
           type="button"
           disabled={!hydrated || state.kind === "saving"}
           onClick={() => void send({ assignedTo: me })}
-          className="h-10 rounded-lg bg-navy px-4 text-sm font-medium text-white hover:bg-navy/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-10 rounded-lg bg-navy px-4 text-sm font-medium text-white hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           Claim this inquiry
         </button>
