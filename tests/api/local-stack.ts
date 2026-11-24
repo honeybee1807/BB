@@ -36,12 +36,31 @@ export async function signedInClient(stack: LocalStack, email: string, password:
   return c;
 }
 
-// The local gateway on Docker for Windows sometimes drops a kept-alive connection; one retry covers it.
-export async function createAuthUser(db: Db, email: string, password: string): Promise<string> {
+// The local gateway on Docker for Windows sometimes drops a kept-alive connection.
+// Status 0 means the request never got a reply; gateway errors (502 to 504) are not retried.
+function isDroppedConnection(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { name?: unknown }).name === "AuthRetryableFetchError" &&
+    (error as { status?: unknown }).status === 0
+  );
+}
+
+type UserCreator = Pick<Db["auth"]["admin"], "createUser">;
+
+export async function createAuthUser(
+  db: { auth: { admin: UserCreator } },
+  email: string,
+  password: string,
+): Promise<string> {
   for (let attempt = 1; ; attempt++) {
     const { data, error } = await db.auth.admin.createUser({ email, password, email_confirm: true });
     if (data.user) return data.user.id;
-    if (attempt === 1 && error?.name === "AuthRetryableFetchError") continue;
-    throw new Error(`create user: ${error?.message ?? "no user"}`);
+    if (attempt === 1 && isDroppedConnection(error)) {
+      console.warn("create user: connection dropped, retrying once");
+      continue;
+    }
+    throw new Error(`create user: ${error?.message ?? "no user"}`, { cause: error });
   }
 }
