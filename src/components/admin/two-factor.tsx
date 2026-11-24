@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useHydrated } from "@/lib/use-hydrated";
 
 type Props = { mode: "verify"; factorId: string } | { mode: "enrol" };
 
@@ -25,6 +26,7 @@ export function TwoFactor(props: Props) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const hydrated = useHydrated();
 
   const factorId = props.mode === "verify" ? props.factorId : enrol?.factorId;
 
@@ -84,7 +86,7 @@ export function TwoFactor(props: Props) {
         <button
           type="button"
           onClick={startEnrolment}
-          disabled={busy}
+          disabled={!hydrated || busy}
           className="self-start rounded-md bg-navy px-4 py-2.5 font-medium text-white hover:bg-navy-deep disabled:opacity-60"
         >
           {busy ? "Preparing..." : "Set up two-factor sign-in"}
@@ -94,7 +96,7 @@ export function TwoFactor(props: Props) {
   }
 
   return (
-    <form onSubmit={verify} noValidate className="flex flex-col gap-4">
+    <form method="post" onSubmit={verify} noValidate className="flex flex-col gap-4">
       {enrol && (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted">1. Scan this QR code with your authenticator app.</p>
@@ -138,7 +140,7 @@ export function TwoFactor(props: Props) {
       )}
       <button
         type="submit"
-        disabled={busy}
+        disabled={!hydrated || busy}
         className="self-start rounded-md bg-navy px-4 py-2.5 font-medium text-white hover:bg-navy-deep disabled:opacity-60"
       >
         {busy ? "Checking..." : "Verify"}

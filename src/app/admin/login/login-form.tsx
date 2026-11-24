@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useHydrated } from "@/lib/use-hydrated";
 import { loginSchema, type LoginInput } from "@/lib/validation/auth";
 
 const REASONS: Record<string, string> = {
@@ -14,6 +15,7 @@ const REASONS: Record<string, string> = {
 export function LoginForm() {
   const reason = useSearchParams().get("reason");
   const [serverError, setServerError] = useState<string | null>(null);
+  const hydrated = useHydrated();
   const {
     register,
     handleSubmit,
@@ -42,7 +44,7 @@ export function LoginForm() {
   const notice = reason ? REASONS[reason] : undefined;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6 flex flex-col gap-4">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6 flex flex-col gap-4">
       {notice && (
         <p role="status" className="rounded-md bg-sand-light px-3 py-2 text-sm text-ink">
           {notice}
@@ -93,7 +95,7 @@ export function LoginForm() {
       )}
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={!hydrated || isSubmitting}
         className="rounded-md bg-navy px-4 py-2.5 font-medium text-white hover:bg-navy-deep disabled:opacity-60"
       >
         {isSubmitting ? "Signing in..." : "Sign in"}

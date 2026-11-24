@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { addDays, todayInSast } from "@/lib/format";
+import { useHydrated } from "@/lib/use-hydrated";
 import { inquirySchema, type Inquiry, type InquiryForm as Values } from "@/lib/validation/inquiry";
 import { Turnstile } from "./turnstile";
 
@@ -92,12 +93,7 @@ function InquiryForm({ siteKey, property }: { siteKey: string; property?: { id: 
   const message = useRef<HTMLDivElement>(null);
   // the page is prerendered, so today is read in the browser
   const today = useSyncExternalStore(noop, todayInSast, () => undefined);
-  // A click before hydration would submit natively and put guest details in the URL.
-  const hydrated = useSyncExternalStore(
-    noop,
-    () => true,
-    () => false,
-  );
+  const hydrated = useHydrated();
 
   const {
     register,

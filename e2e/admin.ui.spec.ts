@@ -37,6 +37,23 @@ async function signIn(page: Page, user: TestUser) {
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
+test("an early click never puts the password in the URL", async ({ page }) => {
+  // hold the scripts back so the form is still server-rendered HTML
+  await page.route("**/_next/static/chunks/**", async (route) => {
+    await new Promise((done) => setTimeout(done, 3000));
+    await route.continue();
+  });
+  await page.goto("/admin/login", { waitUntil: "commit" });
+  await page.getByLabel("Email").fill("someone@test.local");
+  await page.getByLabel("Password").fill("not-a-real-password");
+  const signIn = page.getByRole("button", { name: "Sign in" });
+  await expect(signIn).toBeDisabled();
+  await signIn.click({ force: true, noWaitAfter: true });
+  await expect(signIn).toBeEnabled();
+  expect(page.url()).not.toContain("password");
+  expect(new URL(page.url()).search).toBe("");
+});
+
 test("login form validates input and shows a neutral error", async ({ page }) => {
   await page.goto("/admin/login");
   await expect(page.getByRole("heading", { name: "Admin sign in" })).toBeVisible();
