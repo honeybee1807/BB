@@ -366,6 +366,18 @@ describe("team member through the API", () => {
     expect(data).toEqual([{ status: "in_progress" }]);
   });
 
+  it("only one of two people claiming the same inquiry at once gets it", async () => {
+    check(await admin.from("inquiries").update({ assigned_to: null }).eq("id", ids.inquiry), "unassign");
+    const claim = (db: Db, id: string) =>
+      db.from("inquiries").update({ assigned_to: id }).eq("id", ids.inquiry).is("assigned_to", null).select("id");
+    const results = await Promise.all([claim(team, ids.team), claim(owner, ids.owner)]);
+    for (const r of results) expect(r.error).toBeNull();
+    expect(results.map((r) => r.data?.length ?? 0).sort()).toEqual([0, 1]);
+    const winner = results[0].data?.length ? ids.team : ids.owner;
+    const { data } = await admin.from("inquiries").select("assigned_to").eq("id", ids.inquiry).single();
+    expect(data?.assigned_to).toBe(winner);
+  });
+
   it("cannot soft delete a property, a post or an inquiry", async () => {
     const now = new Date().toISOString();
     expect((await team.from("properties").update({ deleted_at: now }).eq("id", ids.draft)).error?.code).toBe("42501");

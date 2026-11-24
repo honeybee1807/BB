@@ -47,14 +47,17 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/inqu
   if (notes !== undefined && notes !== current.internal_notes) update.internal_notes = notes;
   if (Object.keys(update).length === 0) return json({ ok: true });
 
-  const { data: saved, error } = await supabase
-    .from("inquiries")
-    .update(update)
-    .eq("id", id)
-    .select("id")
-    .maybeSingle();
+  let query = supabase.from("inquiries").update(update).eq("id", id);
+  // One conditional update, so two people can never take the same inquiry at once.
+  if (update.assigned_to !== undefined) {
+    query = current.assigned_to === null ? query.is("assigned_to", null) : query.eq("assigned_to", current.assigned_to);
+  }
+  const { data: saved, error } = await query.select("id").maybeSingle();
   if (error) return responses.serverError();
-  if (!saved) return NOT_FOUND();
+  if (!saved) {
+    if (update.assigned_to === undefined) return NOT_FOUND();
+    return json({ ok: false, error: "Someone else has just picked this up. Refresh to see who." }, 409);
+  }
 
   // ids and status names only: never guest details or the text of the notes
   const base = {
