@@ -555,6 +555,7 @@ export type Database = {
         }[];
       };
       open_dates: { Args: { p_from: string; p_property_id: string; p_to: string }; Returns: number };
+      purge_expired_inquiries: { Args: Record<PropertyKey, never>; Returns: number };
       rate_limit_clear: { Args: { p_bucket: string; p_key_hash: string }; Returns: undefined };
       rate_limit_count: { Args: { p_bucket: string; p_key_hash: string; p_window_seconds: number }; Returns: number };
       rate_limit_hit: {
