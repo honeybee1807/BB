@@ -93,7 +93,7 @@ test("team member sees the dashboard without owner links", async ({ page, isMobi
 
   await nav.getByRole("link", { name: "Inquiries" }).click();
   await expect(page).toHaveURL(/\/admin\/inquiries$/);
-  await expect(page.getByRole("heading", { name: "Inquiries" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inquiries", level: 1 })).toBeVisible();
 });
 
 test("owner sets up two-factor before reaching the dashboard", async ({ page }) => {

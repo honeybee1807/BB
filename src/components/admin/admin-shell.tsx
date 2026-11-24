@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { initials } from "@/lib/admin-format";
 import { supportHref } from "@/lib/site";
 import { IdleLogout } from "./idle-logout";
 import { signOut } from "./sign-out-button";
@@ -43,15 +44,6 @@ const NAV: NavItem[] = [
 
 function isActive(pathname: string, href: string): boolean {
   return href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
 }
 
 function Brand() {
@@ -209,12 +201,15 @@ export function AdminShell({ user, children }: { user: ShellUser; children: Reac
         </Dialog.Portal>
       </Dialog.Root>
 
-      <aside className="on-dark sticky top-0 hidden h-screen w-[max(220px,15vw)] max-w-64 shrink-0 flex-col bg-navy-deep text-white lg:flex">
-        <div className="px-6 pt-7 pb-8">
-          <Brand />
-        </div>
-        <SidebarBody user={user} onNavigate={close} />
-      </aside>
+      {/* the column fills the page height; the menu inside it stays in view while scrolling */}
+      <div className="hidden w-[max(220px,15vw)] max-w-64 shrink-0 bg-navy-deep lg:block">
+        <aside className="on-dark sticky top-0 flex h-screen flex-col text-white">
+          <div className="px-6 pt-7 pb-8">
+            <Brand />
+          </div>
+          <SidebarBody user={user} onNavigate={close} />
+        </aside>
+      </div>
 
       <main id="admin-main" tabIndex={-1} className="min-w-0 flex-1 px-4 pt-20 pb-10 sm:px-6 lg:px-8 lg:pt-7">
         {children}
