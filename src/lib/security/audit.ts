@@ -17,7 +17,28 @@ type AuditAction =
   | "inquiry.assign"
   | "inquiry.notes"
   | "availability.block"
-  | "availability.open";
+  | "availability.open"
+  | "region.create"
+  | "region.update"
+  | "region.delete"
+  | "estate.create"
+  | "estate.update"
+  | "estate.delete"
+  | "property.create"
+  | "property.update"
+  | "property.publish"
+  | "photo.add"
+  | "photo.update"
+  | "photo.order"
+  | "photo.delete"
+  | "post.create"
+  | "post.update"
+  | "post.publish"
+  | "post.cover"
+  | "post.delete"
+  | "testimonial.create"
+  | "testimonial.update"
+  | "testimonial.delete";
 
 type AuditEntry = {
   actorId: string | null;

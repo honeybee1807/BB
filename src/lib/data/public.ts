@@ -1,5 +1,5 @@
 import "server-only";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { getPublicClient } from "@/lib/supabase/public";
 import type { Database } from "@/types/database";
 
@@ -56,6 +56,7 @@ function byPhotoOrder(a: Photo, b: Photo): number {
 export async function listProperties(): Promise<PropertySummary[]> {
   "use cache";
   cacheLife("hours");
+  cacheTag("listings");
   const { data, error } = await getPublicClient()
     .from("properties")
     .select(SUMMARY)
@@ -86,6 +87,7 @@ export async function featuredProperties(limit = 3): Promise<PropertySummary[]> 
 export async function getProperty(slug: string): Promise<PropertyDetail | null> {
   "use cache";
   cacheLife("hours");
+  cacheTag("listings");
   const { data, error } = await getPublicClient()
     .from("properties")
     .select(`*, ${PLACE}, photos:property_photos(${PHOTO})`)
@@ -105,6 +107,7 @@ export type Region = Database["public"]["Tables"]["regions"]["Row"] & {
 export async function listRegions(): Promise<Region[]> {
   "use cache";
   cacheLife("hours");
+  cacheTag("listings");
   const { data, error } = await getPublicClient()
     .from("regions")
     .select("*, estates(*)")
@@ -139,6 +142,7 @@ export type Post = Pick<
 export async function listPosts(): Promise<Post[]> {
   "use cache";
   cacheLife("hours");
+  cacheTag("journal");
   const { data, error } = await getPublicClient()
     .from("blog_posts")
     .select(
@@ -161,6 +165,7 @@ export type SeoPage = { title: string; description: string; og_image_path: strin
 export async function getSeoPage(path: string): Promise<SeoPage | null> {
   "use cache";
   cacheLife("hours");
+  cacheTag("seo");
   const { data, error } = await getPublicClient()
     .from("seo_pages")
     .select("title, description, og_image_path")
@@ -180,6 +185,7 @@ export type Testimonial = { id: string; guest_name: string; place: string | null
 export async function visibleTestimonials(limit = 3): Promise<Testimonial[]> {
   "use cache";
   cacheLife("hours");
+  cacheTag("testimonials");
   const { data, error } = await getPublicClient()
     .from("testimonials")
     .select("id, guest_name, place, quote")
