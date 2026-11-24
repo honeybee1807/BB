@@ -33,3 +33,30 @@ export function addDays(isoDate: string, days: number): string {
 export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+// Fixed names, because locale data differs between machines (en-ZA gives "Sept" and "02").
+export function monthName(month: number, short = false): string {
+  const name = MONTHS[month - 1] ?? "";
+  return short ? name.slice(0, 3) : name;
+}
+
+// Splits YYYY-MM-DD into numbers.
+export function dateParts(isoDate: string): { year: number; month: number; day: number } {
+  const [year = 0, month = 0, day = 0] = isoDate.split("-").map(Number);
+  return { year, month, day };
+}
