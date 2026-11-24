@@ -5,7 +5,7 @@ const id = "3f0f7c3e-2c2b-4f7e-9a51-6d1c1a0b2c3d";
 
 describe("inquiryUpdateSchema", () => {
   it("accepts one change at a time", () => {
-    expect(inquiryUpdateSchema.safeParse({ status: "in_progress" }).success).toBe(true);
+    expect(inquiryUpdateSchema.safeParse({ status: "claimed" }).success).toBe(true);
     expect(inquiryUpdateSchema.safeParse({ assignedTo: id }).success).toBe(true);
     expect(inquiryUpdateSchema.safeParse({ assignedTo: null }).success).toBe(true);
     expect(inquiryUpdateSchema.safeParse({ notes: "Called the guest" }).success).toBe(true);
@@ -16,7 +16,7 @@ describe("inquiryUpdateSchema", () => {
   });
 
   it("rejects unknown statuses and fields", () => {
-    expect(inquiryUpdateSchema.safeParse({ status: "claimed" }).success).toBe(false);
+    expect(inquiryUpdateSchema.safeParse({ status: "pending" }).success).toBe(false);
     expect(inquiryUpdateSchema.safeParse({ status: "new", guestName: "x" }).success).toBe(false);
   });
 

@@ -5,8 +5,9 @@ export type InquiryStatus = Database["public"]["Enums"]["inquiry_status"];
 
 export const STATUS_LABELS: Record<InquiryStatus, string> = {
   new: "New",
-  in_progress: "In progress",
-  actioned: "Actioned",
+  claimed: "Claimed",
+  answered: "Answered",
+  closed: "Closed",
 };
 
 export const STATUSES = Object.keys(STATUS_LABELS) as InquiryStatus[];

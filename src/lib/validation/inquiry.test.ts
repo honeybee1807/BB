@@ -46,7 +46,7 @@ describe("inquirySchema", () => {
   });
 
   it("rejects unknown keys", () => {
-    expect(issues({ ...valid, status: "actioned" })).toContain("");
+    expect(issues({ ...valid, status: "answered" })).toContain("");
   });
 
   it("rejects a check-in in the past", () => {

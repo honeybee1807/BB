@@ -567,7 +567,7 @@ export type Database = {
     Enums: {
       accommodation_preference: "resort" | "holiday_home" | "no_preference";
       admin_role: "owner" | "team_member";
-      inquiry_status: "new" | "in_progress" | "actioned";
+      inquiry_status: "new" | "claimed" | "answered" | "closed";
       property_type: "resort" | "holiday_home";
     };
     CompositeTypes: {
@@ -681,7 +681,7 @@ export const Constants = {
     Enums: {
       accommodation_preference: ["resort", "holiday_home", "no_preference"],
       admin_role: ["owner", "team_member"],
-      inquiry_status: ["new", "in_progress", "actioned"],
+      inquiry_status: ["new", "claimed", "answered", "closed"],
       property_type: ["resort", "holiday_home"],
     },
   },

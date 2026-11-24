@@ -85,7 +85,7 @@ test("rejects a cross-site post", async () => {
 
 test("rejects unknown fields and invalid dates", async () => {
   const api = await apiAs();
-  const extra = await api.post("/api/inquiries", { data: inquiry("extra", { status: "actioned" }) });
+  const extra = await api.post("/api/inquiries", { data: inquiry("extra", { status: "answered" }) });
   expect(extra.status()).toBe(400);
   const past = await api.post("/api/inquiries", { data: inquiry("past", { checkIn: "2020-01-01" }) });
   expect(past.status()).toBe(400);

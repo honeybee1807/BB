@@ -211,15 +211,23 @@ async function add() {
   check((await db.from("availability_blocks").insert(blocks)).error, "blocked dates");
 
   // [guest, home index or null, check-in from today, nights, adults, children, status, received days ago]
-  const guests: [string, number | null, number, number, number, number, "new" | "in_progress" | "actioned", number][] =
-    [
-      ["Demo Guest One", 0, 40, 3, 2, 2, "new", 1],
-      ["Demo Guest Two", 2, 55, 4, 4, 0, "new", 3],
-      ["Demo Guest Three", null, 70, 2, 2, 0, "in_progress", 6],
-      ["Demo Guest Four", 1, 30, 5, 2, 1, "in_progress", 12],
-      ["Demo Guest Five", 4, 90, 7, 6, 3, "actioned", 20],
-      ["Demo Guest Six", 7, 25, 2, 2, 0, "actioned", 35],
-    ];
+  const guests: [
+    string,
+    number | null,
+    number,
+    number,
+    number,
+    number,
+    "new" | "claimed" | "answered" | "closed",
+    number,
+  ][] = [
+    ["Demo Guest One", 0, 40, 3, 2, 2, "new", 1],
+    ["Demo Guest Two", 2, 55, 4, 4, 0, "new", 3],
+    ["Demo Guest Three", null, 70, 2, 2, 0, "claimed", 6],
+    ["Demo Guest Four", 1, 30, 5, 2, 1, "claimed", 12],
+    ["Demo Guest Five", 4, 90, 7, 6, 3, "answered", 20],
+    ["Demo Guest Six", 7, 25, 2, 2, 0, "closed", 35],
+  ];
   const inquiries = guests.map(([name, home, start, nightCount, adults, children, status, ago], n) => {
     const received = new Date(Date.now() - ago * 86_400_000).toISOString();
     return {

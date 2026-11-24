@@ -26,7 +26,7 @@ select ok(not has_table_privilege('authenticated', 'public.inquiries', 'insert,d
 select ok(has_column_privilege('authenticated', 'public.inquiries', 'status', 'update'), 'authenticated can update status');
 select ok(not has_column_privilege('authenticated', 'public.inquiries', 'guest_email', 'update'),
   'authenticated cannot update guest details');
-select enum_has_labels('public', 'inquiry_status', array['new', 'in_progress', 'actioned'], 'statuses are new, in_progress, actioned');
+select enum_has_labels('public', 'inquiry_status', array['new', 'claimed', 'answered', 'closed'], 'statuses are new, claimed, answered, closed');
 
 -- Anon
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
@@ -35,7 +35,7 @@ select throws_ok('select * from public.inquiries', '42501', null, 'anon: cannot 
 select throws_ok($$insert into public.inquiries (guest_name, guest_email, guest_phone, check_in, check_out, adults, consent_given_at)
   values ('Spam', 's@example.com', '0820000000', '2027-01-01', '2027-01-02', 1, now())$$, '42501', null,
   'anon: cannot insert inquiries directly');
-select throws_ok($$update public.inquiries set status = 'actioned'$$, '42501', null, 'anon: cannot update');
+select throws_ok($$update public.inquiries set status = 'answered'$$, '42501', null, 'anon: cannot update');
 select throws_ok($$delete from public.inquiries$$, '42501', null, 'anon: cannot delete');
 reset role;
 
@@ -43,7 +43,7 @@ reset role;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a4","role":"authenticated"}', true);
 set local role authenticated;
 select is_empty('select id from public.inquiries', 'outsider: sees no inquiries');
-select is_empty($$update public.inquiries set status = 'actioned' returning id$$, 'outsider: cannot update');
+select is_empty($$update public.inquiries set status = 'answered' returning id$$, 'outsider: cannot update');
 reset role;
 
 -- Team member
@@ -52,7 +52,7 @@ set local role authenticated;
 select results_eq($$select id from public.inquiries where id::text like '50000000-%' order by id$$,
   $$values ('50000000-0000-0000-0000-000000000001'::uuid), ('50000000-0000-0000-0000-000000000002'::uuid)$$,
   'team: sees all non-deleted inquiries');
-select isnt_empty($$update public.inquiries set status = 'in_progress', assigned_to = '00000000-0000-0000-0000-0000000000a2',
+select isnt_empty($$update public.inquiries set status = 'claimed', assigned_to = '00000000-0000-0000-0000-0000000000a2',
   internal_notes = 'Called guest' where id = '50000000-0000-0000-0000-000000000001' returning id$$,
   'team: can change status, assignment and notes');
 select throws_ok($$update public.inquiries set guest_email = 'x@example.com' where id = '50000000-0000-0000-0000-000000000001'$$,
@@ -70,7 +70,7 @@ select ok((select deleted_at is null from public.inquiries where id = '50000000-
   'inquiry two is still not deleted');
 select ok((select deleted_at is not null from public.inquiries where id = '50000000-0000-0000-0000-000000000003'),
   'inquiry three is still deleted');
-select is((select status::text from public.inquiries where id = '50000000-0000-0000-0000-000000000001'), 'in_progress',
+select is((select status::text from public.inquiries where id = '50000000-0000-0000-0000-000000000001'), 'claimed',
   'status change was stored');
 
 -- Owner

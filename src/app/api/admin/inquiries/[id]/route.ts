@@ -45,6 +45,11 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/inqu
   if (change.assignedTo !== undefined && change.assignedTo !== current.assigned_to)
     update.assigned_to = change.assignedTo;
   if (notes !== undefined && notes !== current.internal_notes) update.internal_notes = notes;
+  // Unless a status is chosen too, taking a new inquiry claims it and letting go of a claimed one reopens it.
+  if (update.assigned_to !== undefined && update.status === undefined && change.status === undefined) {
+    if (update.assigned_to && current.status === "new") update.status = "claimed";
+    if (!update.assigned_to && current.status === "claimed") update.status = "new";
+  }
   if (Object.keys(update).length === 0) return json({ ok: true });
 
   let query = supabase.from("inquiries").update(update).eq("id", id);

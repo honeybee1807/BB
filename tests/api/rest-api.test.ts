@@ -359,11 +359,11 @@ describe("team member through the API", () => {
   it("can update inquiry status, assignment and notes", async () => {
     const { data, error } = await team
       .from("inquiries")
-      .update({ status: "in_progress", assigned_to: ids.team, internal_notes: "Called guest" })
+      .update({ status: "claimed", assigned_to: ids.team, internal_notes: "Called guest" })
       .eq("id", ids.inquiry)
       .select("status");
     expect(error).toBeNull();
-    expect(data).toEqual([{ status: "in_progress" }]);
+    expect(data).toEqual([{ status: "claimed" }]);
   });
 
   it("only one of two people claiming the same inquiry at once gets it", async () => {
