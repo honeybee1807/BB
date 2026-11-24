@@ -159,7 +159,11 @@ test("region and estate pages list their homes", async ({ page }) => {
 test("the inquiry form shows errors, then sends", async ({ page }) => {
   await page.goto(`/properties/${slug("halal-home")}`);
   const form = page.getByRole("region", { name: "Inquiry form" });
-  await form.getByRole("button", { name: "Send inquiry" }).click();
+  const send = form.getByRole("button", { name: "Send inquiry" });
+  // the button is enabled once the form has hydrated
+  await expect(form).toBeVisible();
+  await expect(send).toBeEnabled();
+  await send.click();
   const name = form.getByLabel("Full name");
   await expect(name).toHaveAttribute("aria-invalid", "true");
   await expect(form.getByText("Please enter your full name.")).toBeVisible();
@@ -183,6 +187,23 @@ test("the inquiry form shows errors, then sends", async ({ page }) => {
   await expect(form.getByText("Test Guest")).toHaveCount(0);
   const { data } = await admin.from("inquiries").select("property_id").eq("guest_email", `e2e-form-${run}@test.local`);
   expect(data).toEqual([{ property_id: ids.halal }]);
+});
+
+test("an early click never puts guest details in the URL", async ({ page }) => {
+  // hold the scripts back so the form is still server-rendered HTML
+  await page.route("**/_next/static/chunks/**", async (route) => {
+    await new Promise((done) => setTimeout(done, 3000));
+    await route.continue();
+  });
+  await page.goto("/contact", { waitUntil: "commit" });
+  const form = page.getByRole("region", { name: "Inquiry form" });
+  await form.getByLabel("Full name").fill("Test Guest");
+  await form.getByLabel("Email address").fill("guest@example.com");
+  const send = form.getByRole("button", { name: "Send inquiry" });
+  await expect(send).toBeDisabled();
+  await send.click({ force: true, noWaitAfter: true });
+  await expect(send).toBeEnabled();
+  expect(new URL(page.url()).search).toBe("");
 });
 
 test("the mobile menu opens and closes with Escape", async ({ page, isMobile }) => {

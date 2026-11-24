@@ -92,6 +92,12 @@ function InquiryForm({ siteKey, property }: { siteKey: string; property?: { id: 
   const message = useRef<HTMLDivElement>(null);
   // the page is prerendered, so today is read in the browser
   const today = useSyncExternalStore(noop, todayInSast, () => undefined);
+  // A click before hydration would submit natively and put guest details in the URL.
+  const hydrated = useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
 
   const {
     register,
@@ -173,7 +179,7 @@ function InquiryForm({ siteKey, property }: { siteKey: string; property?: { id: 
   });
 
   return (
-    <form noValidate onSubmit={send} className="relative flex flex-col gap-4 px-5 py-7 sm:px-8">
+    <form method="post" noValidate onSubmit={send} className="relative flex flex-col gap-4 px-5 py-7 sm:px-8">
       {property && (
         <p className="text-sm text-muted">
           Inquiring about <span className="font-semibold text-navy">{property.name}</span>
@@ -307,7 +313,7 @@ function InquiryForm({ siteKey, property }: { siteKey: string; property?: { id: 
 
       <button
         type="submit"
-        disabled={status === "sending"}
+        disabled={!hydrated || status === "sending"}
         className="mt-1 h-13.5 w-full bg-teal text-[13px] font-bold tracking-[0.16em] text-white uppercase transition-colors duration-150 hover:bg-teal-hover disabled:cursor-wait disabled:opacity-70"
       >
         {status === "sending" ? "Sending..." : status === "failed" ? "Try again" : "Send inquiry"}
