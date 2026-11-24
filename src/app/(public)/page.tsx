@@ -7,8 +7,9 @@ import { InquiryCard } from "@/components/site/inquiry-form";
 import { JsonLd } from "@/components/site/json-ld";
 import { PropertyCard } from "@/components/site/property-card";
 import { SectionHeading } from "@/components/site/section-heading";
+import { Testimonials } from "@/components/site/testimonials";
 import { TrustPoints } from "@/components/site/trust-points";
-import { featuredProperties } from "@/lib/data/public";
+import { featuredProperties, visibleTestimonials } from "@/lib/data/public";
 import { publicEnv } from "@/lib/env";
 import { absoluteUrl, staticPageMetadata } from "@/lib/seo";
 
@@ -62,7 +63,7 @@ function Hero() {
 }
 
 export default async function HomePage() {
-  const featured = await featuredProperties();
+  const [featured, testimonials] = await Promise.all([featuredProperties(), visibleTestimonials()]);
   return (
     <>
       <JsonLd
@@ -109,6 +110,7 @@ export default async function HomePage() {
           <TrustPoints className="mt-16 lg:hidden" />
         </section>
       </div>
+      <Testimonials items={testimonials} />
     </>
   );
 }

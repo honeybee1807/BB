@@ -536,6 +536,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      testimonials: {
+        Row: {
+          created_at: string;
+          guest_name: string;
+          id: string;
+          is_visible: boolean;
+          place: string | null;
+          property_id: string | null;
+          quote: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          guest_name: string;
+          id?: string;
+          is_visible?: boolean;
+          place?: string | null;
+          property_id?: string | null;
+          quote: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          guest_name?: string;
+          id?: string;
+          is_visible?: boolean;
+          place?: string | null;
+          property_id?: string | null;
+          quote?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "testimonials_property_id_fkey";
+            columns: ["property_id"];
+            isOneToOne: false;
+            referencedRelation: "properties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

@@ -119,6 +119,31 @@ test("homepage shows the hero, the form and a featured halal home", async ({ pag
   await expectNoA11yViolations(page);
 });
 
+test("testimonials stay hidden until one is visible", async ({ page }) => {
+  const heading = page.getByRole("heading", { name: "What our guests say" });
+  const { count } = await admin
+    .from("testimonials")
+    .select("id", { count: "exact", head: true })
+    .eq("is_visible", true);
+  if (!count) {
+    await page.goto("/");
+    await expect(heading).toHaveCount(0);
+  }
+  const { data, error } = await admin
+    .from("testimonials")
+    .insert({ guest_name: `Test Guest ${run}`, quote: "A calm, happy week.", is_visible: true, sort_order: -1000 })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(`testimonial: ${error?.message}`);
+  try {
+    await page.goto("/");
+    await expect(heading).toBeVisible();
+    await expect(page.getByText(`Test Guest ${run}`)).toBeVisible();
+  } finally {
+    await admin.from("testimonials").delete().eq("id", data.id);
+  }
+});
+
 test("property page has breadcrumbs, halal details and a preselected inquiry", async ({ page }) => {
   await page.goto(`/properties/${slug("halal-home")}`);
   await expect(page.getByRole("heading", { level: 1, name: `Halal Home ${run}` })).toBeVisible();

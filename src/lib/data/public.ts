@@ -174,3 +174,19 @@ export async function getSeoPage(path: string): Promise<SeoPage | null> {
 export function staticParams<T extends Record<string, string>>(params: T[], placeholder: T): T[] {
   return params.length > 0 ? params : [placeholder];
 }
+
+export type Testimonial = { id: string; guest_name: string; place: string | null; quote: string };
+
+export async function visibleTestimonials(limit = 3): Promise<Testimonial[]> {
+  "use cache";
+  cacheLife("hours");
+  const { data, error } = await getPublicClient()
+    .from("testimonials")
+    .select("id, guest_name, place, quote")
+    .eq("is_visible", true)
+    .order("sort_order")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) failed("testimonials");
+  return data;
+}

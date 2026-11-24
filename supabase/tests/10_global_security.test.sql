@@ -5,7 +5,7 @@ select no_plan();
 
 select tables_are('public', array[
   'admin_profiles', 'regions', 'estates', 'properties', 'property_photos', 'availability_blocks',
-  'inquiries', 'blog_posts', 'seo_pages', 'audit_log', 'rate_limits'
+  'inquiries', 'blog_posts', 'seo_pages', 'audit_log', 'rate_limits', 'testimonials'
 ], 'public schema holds exactly the approved tables');
 
 select is_empty($$select tablename from pg_tables where schemaname = 'public' and not rowsecurity$$,
@@ -17,8 +17,8 @@ select is((
   where n.nspname = 'public' and c.relkind = 'r'
     and has_table_privilege('anon', c.oid, 'select')
   ),
-  array['blog_posts', 'estates', 'properties', 'property_photos', 'regions', 'seo_pages'],
-  'anon can select only the six public content tables');
+  array['blog_posts', 'estates', 'properties', 'property_photos', 'regions', 'seo_pages', 'testimonials'],
+  'anon can select only the seven public content tables');
 
 select is_empty($$
   select c.relname from pg_class c
