@@ -26,6 +26,8 @@
     "secrets:scan": "gitleaks git --redact --no-banner .",
     "secrets:staged": "gitleaks git --pre-commit --staged --redact --no-banner .",
     "test:api": "vitest run --config vitest.api.config.ts",
+    "seed:demo": "node scripts/dev/demo-data.ts add",
+    "seed:demo:remove": "node scripts/dev/demo-data.ts remove",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
