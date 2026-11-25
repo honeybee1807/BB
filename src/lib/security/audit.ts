@@ -27,6 +27,7 @@ type AuditAction =
   | "property.create"
   | "property.update"
   | "property.publish"
+  | "property.delete"
   | "photo.add"
   | "photo.update"
   | "photo.order"

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminCard } from "@/components/admin/card";
+import { DeleteHome } from "@/components/admin/delete-home";
 import { PageHeader } from "@/components/admin/page-header";
 import { PhotoManager } from "@/components/admin/photo-manager";
 import { PropertyForm } from "@/components/admin/property-form";
@@ -15,7 +16,7 @@ export const instant = false;
 export const metadata: Metadata = { title: "Edit home" };
 
 export default async function EditPropertyPage({ params }: PageProps<"/admin/properties/[id]">) {
-  await requireAdminPage();
+  const identity = await requireAdminPage();
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const supabase = await createClient();
@@ -53,9 +54,16 @@ export default async function EditPropertyPage({ params }: PageProps<"/admin/pro
         >
           <PropertyForm property={details} regions={regions} />
         </AdminCard>
-        <AdminCard title="Photos" className="self-start">
-          <PhotoManager propertyId={property.id} photos={photos} />
-        </AdminCard>
+        <div className="flex flex-col gap-6 self-start">
+          <AdminCard title="Photos">
+            <PhotoManager propertyId={property.id} photos={photos} />
+          </AdminCard>
+          {identity.role === "owner" && (
+            <AdminCard title="Delete this home">
+              <DeleteHome id={property.id} name={property.name} />
+            </AdminCard>
+          )}
+        </div>
       </div>
     </>
   );

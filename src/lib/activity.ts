@@ -39,6 +39,8 @@ export function describeActivity(entry: Entry, names: Names): { kind: ActivityKi
       return { kind: "home", title: `${Home} updated` };
     case "property.publish":
       return { kind: "home", title: `${Home} ${meta.published ? "published" : "hidden from the site"}` };
+    case "property.delete":
+      return { kind: "home", title: "A home was deleted" };
     case "photo.add":
     case "photo.update":
     case "photo.order":
