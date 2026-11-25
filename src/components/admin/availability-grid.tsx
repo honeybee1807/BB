@@ -82,12 +82,12 @@ export function AvailabilityGrid({
       <p aria-live="polite" className="sr-only">
         {message}
       </p>
-      {/* focusable so keyboard users can scroll the dates sideways */}
+      {/* focusable for keyboard scrolling; relative keeps the sr-only cell labels from widening the page */}
       <div
         role="region"
         aria-label={caption}
         tabIndex={0}
-        className="overflow-x-auto rounded-lg focus-visible:outline-2 focus-visible:outline-teal"
+        className="relative overflow-x-auto rounded-lg focus-visible:outline-2 focus-visible:outline-teal"
       >
         <table className="border-separate border-spacing-1 text-xs">
           <caption className="sr-only">{caption}</caption>
