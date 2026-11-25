@@ -141,13 +141,14 @@ export function InquiryTable({ rows, admins }: { rows: InquiryRow[]; admins: Adm
     return <p className="rounded-lg bg-admin-bg px-4 py-6 text-center text-sm text-muted">No inquiries to show.</p>;
   }
 
+  // sized by the card, not the screen, because the dashboard card is much narrower than the inquiries page
   return (
-    <>
+    <div className="@container">
       <p aria-live="polite" className="sr-only">
         {message}
       </p>
 
-      <table className="hidden w-full text-left min-[800px]:table">
+      <table className="hidden w-full text-left @3xl:table">
         <thead>
           <tr className="border-b border-line text-[11px] font-semibold tracking-[0.08em] whitespace-nowrap text-muted uppercase">
             <th scope="col" className="py-2 pr-3 font-semibold">
@@ -181,7 +182,7 @@ export function InquiryTable({ rows, admins }: { rows: InquiryRow[]; admins: Adm
                 <span className="flex items-center gap-3">
                   <Thumb src={row.property?.thumb ?? null} />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-navy">
+                    <span className="block max-w-52 truncate text-sm font-semibold text-navy">
                       {row.property?.name ?? "No home chosen"}
                     </span>
                     {row.property && (
@@ -220,7 +221,7 @@ export function InquiryTable({ rows, admins }: { rows: InquiryRow[]; admins: Adm
         </tbody>
       </table>
 
-      <ul className="flex flex-col gap-3 min-[800px]:hidden">
+      <ul className="flex flex-col gap-3 @3xl:hidden">
         {rows.map((row) => (
           <li key={row.id} className="rounded-lg p-3 ring-1 ring-line">
             <div className="flex items-start justify-between gap-3">
@@ -249,6 +250,6 @@ export function InquiryTable({ rows, admins }: { rows: InquiryRow[]; admins: Adm
           </li>
         ))}
       </ul>
-    </>
+    </div>
   );
 }
