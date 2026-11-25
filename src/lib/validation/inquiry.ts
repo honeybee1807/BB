@@ -32,7 +32,8 @@ export const inquirySchema = z
     phone: z
       .string()
       .trim()
-      .regex(/^[0-9 +()]{7,20}$/, { error: "Please enter a phone number using digits, spaces, + or brackets." }),
+      .regex(/^[0-9 +()]{7,20}$/, { error: "Please enter a phone number using digits, spaces, + or brackets." })
+      .refine((v) => v.replace(/\D/g, "").length >= 7, { error: "Please enter a phone number we can call." }),
     checkIn: date("Please choose a check-in date."),
     checkOut: date("Please choose a check-out date."),
     adults: count(1, "Please enter between 1 and 30 adults."),

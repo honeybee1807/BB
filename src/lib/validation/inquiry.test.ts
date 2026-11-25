@@ -83,6 +83,11 @@ describe("inquirySchema", () => {
     expect(issues({ ...valid, budgetMin: "R1500" })).toContain("budgetMin");
   });
 
+  it("rejects a phone number without enough digits", () => {
+    expect(issues({ ...valid, phone: "+++ ( ) +++" })).toContain("phone");
+    expect(issues({ ...valid, phone: "(012) +3" })).toContain("phone");
+  });
+
   it("rejects phone numbers with letters", () => {
     expect(issues({ ...valid, phone: "call me maybe" })).toContain("phone");
   });
