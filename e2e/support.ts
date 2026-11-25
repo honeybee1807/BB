@@ -53,6 +53,16 @@ export function trackEmail(email: string) {
   usedEmails.push(email);
 }
 
+// accounts made by accepting an invite rather than by createUser
+export async function trackUserByEmail(email: string): Promise<TestUser> {
+  const { data } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const found = data.users.find((u) => u.email === email);
+  if (!found) throw new Error(`no account for ${email}`);
+  const user = { id: found.id, email };
+  created.push(user);
+  return user;
+}
+
 export async function apiAs(ip = uniqueIp()): Promise<APIRequestContext> {
   usedIps.push(ip);
   return request.newContext({ baseURL: BASE_URL, extraHTTPHeaders: { origin: BASE_URL, "x-forwarded-for": ip } });
@@ -85,5 +95,6 @@ export async function cleanup(): Promise<void> {
   if (ids.length) await admin.from("audit_log").delete().in("actor_id", ids);
   const prefixes = usedEmails.map(emailHashPrefix);
   if (prefixes.length) await admin.from("audit_log").delete().in("metadata->>email_hash", prefixes);
+  if (usedEmails.length) await admin.from("team_invites").delete().in("email", usedEmails);
   for (const u of created.splice(0)) await admin.auth.admin.deleteUser(u.id);
 }
