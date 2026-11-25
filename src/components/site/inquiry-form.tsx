@@ -79,7 +79,7 @@ export function InquiryCard({
         <h2 id="inquiry-heading" className="font-serif text-2xl tracking-[0.06em] uppercase">
           Inquiry form
         </h2>
-        <p className="mt-1.5 text-[13px] text-white/85">We&apos;ll help you find the perfect stay.</p>
+        <p className="mt-1.5 text-[13px] text-white">We&apos;ll help you find the perfect stay.</p>
       </div>
       <InquiryForm siteKey={siteKey} property={property} />
     </section>
