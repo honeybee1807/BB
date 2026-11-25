@@ -17,7 +17,8 @@ const menu = "z-50 min-w-48 rounded-lg bg-white p-1 text-sm text-ink shadow-lg r
 
 function Assignee({ id, admins }: { id: string | null; admins: Admin[] }) {
   const person = admins.find((a) => a.id === id);
-  if (!person) return <span className="text-sm text-muted">Unassigned</span>;
+  // someone deactivated since; removing them clears the assignment instead
+  if (!person) return <span className="text-sm text-muted">{id ? "Previously assigned" : "Unassigned"}</span>;
   return (
     <span className="flex items-center gap-2 text-sm text-ink">
       <Avatar name={person.full_name} />

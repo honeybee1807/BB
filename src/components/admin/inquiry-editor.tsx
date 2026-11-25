@@ -97,6 +97,11 @@ export function InquiryEditor({
           className={`${field} h-9`}
         >
           <option value="">Unassigned</option>
+          {assignedTo && !admins.some((a) => a.id === assignedTo) && (
+            <option value={assignedTo} disabled>
+              Previously assigned (no longer active)
+            </option>
+          )}
           {admins.map((a) => (
             <option key={a.id} value={a.id}>
               {a.full_name}

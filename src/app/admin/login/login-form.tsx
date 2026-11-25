@@ -10,6 +10,7 @@ import { loginSchema, type LoginInput } from "@/lib/validation/auth";
 const REASONS: Record<string, string> = {
   idle: "You were signed out after 30 minutes without activity.",
   signed_out: "You have been signed out.",
+  joined: "Your account is ready. Please sign in.",
 };
 
 export function LoginForm() {
