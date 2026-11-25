@@ -12,6 +12,7 @@ import { TrustPoints } from "@/components/site/trust-points";
 import { featuredProperties, visibleTestimonials } from "@/lib/data/public";
 import { publicEnv } from "@/lib/env";
 import { absoluteUrl, staticPageMetadata } from "@/lib/seo";
+import { organizationContact } from "@/lib/site";
 
 // Checked at build time. Drop the real photo in public/images and the gradient makes way.
 const hasHeroPhoto = existsSync(join(process.cwd(), "public", "images", "hero.webp"));
@@ -69,6 +70,7 @@ export default async function HomePage() {
           name: "Bargain Breaks",
           url: absoluteUrl("/"),
           description: "Halal-conscious holiday homes and resorts in South Africa, each one personally reviewed.",
+          ...organizationContact(),
         }}
       />
       <Hero />

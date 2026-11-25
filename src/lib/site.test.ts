@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contactLinks, supportHref } from "./site";
+import { contactLinks, organizationContact, supportHref } from "./site";
 
 const empty = { phone: "", whatsapp: "", email: "", supportEmail: "" };
 
@@ -36,5 +36,19 @@ describe("contact links", () => {
 
   it("builds the support link", () => {
     expect(supportHref({ ...empty, supportEmail: "help@example.co.za" })).toBe("mailto:help@example.co.za");
+  });
+});
+
+describe("organizationContact", () => {
+  it("leaves out empty details", () => {
+    expect(organizationContact(empty)).toEqual({});
+    expect(organizationContact({ ...empty, phone: " ( ) " })).toEqual({});
+  });
+
+  it("names the phone and email once they are set", () => {
+    expect(organizationContact({ ...empty, phone: "082 123 4567", email: "info@example.co.za" })).toEqual({
+      telephone: "0821234567",
+      email: "info@example.co.za",
+    });
   });
 });

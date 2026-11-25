@@ -28,3 +28,14 @@ export function supportHref(details: Contact = contact): string | null {
   const email = details.supportEmail.trim();
   return email ? `mailto:${email}` : null;
 }
+
+// Structured data only names details that are set, so search engines never see an empty phone.
+export function organizationContact(details: Contact = contact): { telephone?: string; email?: string } {
+  const links = contactLinks(details);
+  const phone = links.find((l) => l.kind === "phone");
+  const email = links.find((l) => l.kind === "email");
+  return {
+    ...(phone ? { telephone: phone.href.slice(4) } : {}),
+    ...(email ? { email: email.text } : {}),
+  };
+}
