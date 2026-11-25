@@ -32,8 +32,13 @@ const UPLOAD_MAX = 15 * 1024 * 1024;
 
 // Sends the file straight to temporary storage, then asks the server to process it.
 export async function uploadImage(file: File, finish: (path: string) => Promise<Result>): Promise<Result> {
+  if (/\.hei[cf]$/i.test(file.name) || /^image\/hei[cf]/.test(file.type)) {
+    return { ok: false, error: `${file.name} is an iPhone HEIC photo. Please save it as a JPEG and try again.` };
+  }
   if (!UPLOAD_TYPES.includes(file.type)) return { ok: false, error: `${file.name} is not a JPEG, PNG or WebP image.` };
-  if (file.size > UPLOAD_MAX) return { ok: false, error: `${file.name} is over 15 MB.` };
+  if (file.size > UPLOAD_MAX) {
+    return { ok: false, error: `${file.name} is over 15 MB. Please make it smaller and try again.` };
+  }
   try {
     const res = await fetch("/api/admin/uploads", {
       method: "POST",

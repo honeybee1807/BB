@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { adminRequest, notFound, refresh } from "@/lib/admin-route";
 import { json, responses } from "@/lib/http";
-import { ImageError, processUpload, removeImages } from "@/lib/images";
+import { discardUpload, ImageError, processUpload, removeImages } from "@/lib/images";
 import { audit } from "@/lib/security/audit";
 import { photoAddSchema, photoOrderSchema } from "@/lib/validation/admin";
 
@@ -25,6 +25,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/admin/prope
   if (homeError) return responses.serverError();
   if (!home) return notFound("home");
   if (home.photos.length >= MAX_PHOTOS) {
+    await discardUpload(data.path);
     return responses.badRequest(`A home can have up to ${MAX_PHOTOS} photos. Delete one first.`);
   }
 
@@ -35,20 +36,25 @@ export async function POST(request: Request, ctx: RouteContext<"/api/admin/prope
     return e instanceof ImageError ? responses.badRequest(e.message) : responses.serverError();
   }
 
-  const { data: saved, error } = await supabase
-    .from("property_photos")
-    .insert({
-      property_id: id,
-      storage_path: image.storage_path,
-      thumb_path: image.thumb_path!,
-      width: image.width,
-      height: image.height,
-      alt_text: data.alt_text,
-      sort_order: Math.max(-1, ...home.photos.map((p) => p.sort_order)) + 1,
-      is_cover: !home.photos.some((p) => p.is_cover),
-    })
-    .select("id")
-    .single();
+  const insert = (is_cover: boolean) =>
+    supabase
+      .from("property_photos")
+      .insert({
+        property_id: id,
+        storage_path: image.storage_path,
+        thumb_path: image.thumb_path!,
+        width: image.width,
+        height: image.height,
+        alt_text: data.alt_text,
+        sort_order: Math.max(-1, ...home.photos.map((p) => p.sort_order)) + 1,
+        is_cover,
+      })
+      .select("id")
+      .single();
+  let result = await insert(!home.photos.some((p) => p.is_cover));
+  // two first photos uploaded together both ask to be the cover; the one that loses is added as a normal photo
+  if (result.error?.code === "23505") result = await insert(false);
+  const { data: saved, error } = result;
   if (error) {
     await removeImages("property-photos", [image.storage_path, image.thumb_path!]);
     return error.code === "23514"
