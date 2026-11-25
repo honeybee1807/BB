@@ -25,7 +25,7 @@ if (!gitleaks) {
   process.stderr.write(
     "Secret scan failed: gitleaks is not installed or could not be found.\n" +
       "Install it with: winget install Gitleaks.Gitleaks\n" +
-      "Nothing was committed. This repo is public, so the scan cannot be skipped.\n",
+      "This repo is public, so the scan cannot be skipped.\n",
   );
   process.exit(1);
 }

@@ -37,7 +37,7 @@ export function dbError(error: { code?: string }, duplicate = "That web address 
   return responses.serverError();
 }
 
-export type PublicTag = "listings" | "journal" | "testimonials" | "seo";
+type PublicTag = "listings" | "journal" | "testimonials" | "seo";
 
 // Admin changes should show on the public site at the next visit, not after the cache expires.
 export function refresh(...tags: PublicTag[]): void {

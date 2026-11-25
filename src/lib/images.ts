@@ -11,7 +11,7 @@ const THUMB_WIDTH = 640;
 const STALE_MS = 60 * 60 * 1000;
 const MAX_PIXELS = 50_000_000;
 
-export type StoredImage = { storage_path: string; thumb_path: string | null; width: number; height: number };
+type StoredImage = { storage_path: string; thumb_path: string | null; width: number; height: number };
 
 export class ImageError extends Error {}
 

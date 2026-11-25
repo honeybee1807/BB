@@ -118,7 +118,7 @@ export async function activeAdmins(supabase: UserClient): Promise<Admin[]> {
   return data;
 }
 
-export type AdminProperty = { id: string; name: string; is_published: boolean };
+type AdminProperty = { id: string; name: string; is_published: boolean };
 
 export async function adminProperties(supabase: UserClient): Promise<AdminProperty[]> {
   const { data, error } = await supabase
@@ -186,7 +186,7 @@ export type PropertyPhoto = Pick<
   "id" | "storage_path" | "thumb_path" | "alt_text" | "sort_order" | "is_cover" | "width" | "height"
 >;
 
-export type PropertyForEdit = Row<"properties"> & { photos: PropertyPhoto[] };
+type PropertyForEdit = Row<"properties"> & { photos: PropertyPhoto[] };
 
 export async function getPropertyAdmin(supabase: UserClient, id: string): Promise<PropertyForEdit | null> {
   const { data, error } = await supabase

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { daysBetween, todayInSast } from "@/lib/format";
 
-export const MAX_NIGHTS = 60;
+const MAX_NIGHTS = 60;
 
 const date = (message: string) => z.iso.date({ error: message });
 

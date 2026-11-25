@@ -3,7 +3,7 @@
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-export type Lookup = { table: "properties" | "blog_posts" | "regions" | "estates"; query: string };
+type Lookup = { table: "properties" | "blog_posts" | "regions" | "estates"; query: string };
 
 // null means the address is not a detail page; "missing" means it cannot exist.
 export function lookupFor(pathname: string): Lookup | "missing" | null {

@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
-export type GalleryPhoto = { full: string; thumb: string; alt: string; width: number; height: number };
+type GalleryPhoto = { full: string; thumb: string; alt: string; width: number; height: number };
 
 const arrow =
   "absolute top-1/2 flex size-11 -translate-y-1/2 items-center justify-center bg-white/90 text-navy shadow hover:bg-white";

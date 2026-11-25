@@ -10,7 +10,6 @@ export const inviteSchema = z.strictObject({
     .pipe(z.email({ error: "Enter a valid email address." }).max(254)),
   role,
 });
-export type InviteInput = z.input<typeof inviteSchema>;
 
 export const inviteActionSchema = z.strictObject({ action: z.enum(["resend", "cancel"]) });
 

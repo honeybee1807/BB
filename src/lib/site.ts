@@ -9,7 +9,7 @@ export const contact = {
 
 type Contact = typeof contact;
 
-export type ContactLink = { kind: "phone" | "whatsapp" | "email"; label: string; text: string; href: string };
+type ContactLink = { kind: "phone" | "whatsapp" | "email"; label: string; text: string; href: string };
 
 export function contactLinks(details: Contact = contact): ContactLink[] {
   const links: ContactLink[] = [];

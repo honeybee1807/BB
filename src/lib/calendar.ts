@@ -1,6 +1,6 @@
 import { addDays, dateParts, monthName } from "@/lib/format";
 
-export type CalendarDay = { date: string; inMonth: boolean };
+type CalendarDay = { date: string; inMonth: boolean };
 
 // "2026-09" for September 2026
 export function monthKey(isoDate: string): string {

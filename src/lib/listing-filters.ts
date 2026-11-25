@@ -2,7 +2,7 @@
 // and the form works without JavaScript.
 export const GUEST_OPTIONS = [2, 4, 6, 8, 10, 12] as const;
 
-export type ListingFilters = { halal: boolean; region: string; estate: string; guests: number };
+type ListingFilters = { halal: boolean; region: string; estate: string; guests: number };
 
 type Param = string | string[] | undefined;
 

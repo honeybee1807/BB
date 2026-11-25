@@ -28,8 +28,6 @@ export const availabilitySchema = z
     if (v.from < todayInSast()) ctx.addIssue({ code: "custom", path: ["from"], message: "Past dates can't change." });
   });
 
-export type AvailabilityChange = z.infer<typeof availabilitySchema>;
-
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const required = (label: string, max: number) =>
   z
