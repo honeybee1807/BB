@@ -151,9 +151,8 @@ test("blocking a range and reopening one date agree in the grid and the calendar
     ).toHaveAttribute("aria-pressed", String(blocked));
     // the calendar shows one month, so dates past its end are checked in the grid only
     if (date.slice(0, 7) === start.slice(0, 7)) {
-      await expect(page.locator(`[data-date="${date}"]`)).toHaveAttribute(
-        "aria-label",
-        new RegExp(`^${label}, ${blocked ? "blocked" : "available"}`),
+      await expect(page.locator(`[data-date="${date}"]`)).toHaveAccessibleName(
+        new RegExp(`^${label}, ${blocked ? "Blocked" : "Open"}`),
       );
     }
   }

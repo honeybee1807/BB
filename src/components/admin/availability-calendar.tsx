@@ -212,14 +212,14 @@ export function AvailabilityCalendar({
                 const past = date < today;
                 const selected = range.includes(date);
                 const isToday = date === today;
-                const label = `${dateRangeLabel(date, date)}, ${isBlocked ? "blocked" : "available"}${isToday ? ", today" : ""}`;
+                const status = isBlocked ? "Blocked" : "Open";
                 if (!inMonth) {
                   return (
                     <span
                       key={date}
                       role="gridcell"
                       aria-disabled="true"
-                      aria-label={label}
+                      aria-label={`${dateRangeLabel(date, date)}, ${status.toLowerCase()}`}
                       className="aspect-square sm:aspect-auto sm:h-24"
                     />
                   );
@@ -230,7 +230,6 @@ export function AvailabilityCalendar({
                     role="gridcell"
                     data-date={date}
                     tabIndex={date === tabDate ? 0 : -1}
-                    aria-label={label}
                     aria-selected={selected}
                     aria-disabled={past || undefined}
                     onClick={() => choose(date)}
@@ -244,13 +243,14 @@ export function AvailabilityCalendar({
                       selected ? "outline-2 outline-offset-2 outline-teal" : "",
                     ].join(" ")}
                   >
+                    {/* the name is built from this text so it always contains what is on screen */}
                     <span className="font-semibold">{dateParts(date).day}</span>
-                    <span
-                      aria-hidden
-                      className={`hidden text-xs sm:block ${isBlocked ? "text-white/80" : "text-muted"}`}
-                    >
-                      {isBlocked ? "Blocked" : "Open"}
+                    <span className="sr-only"> {monthLabel(month, true)},</span>
+                    <span className={`sr-only text-xs sm:not-sr-only ${isBlocked ? "text-white/80" : "text-muted"}`}>
+                      {" "}
+                      {status}
                     </span>
+                    {isToday && <span className="sr-only">, today</span>}
                   </span>
                 );
               })}
