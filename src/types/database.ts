@@ -511,30 +511,41 @@ export type Database = {
       seo_pages: {
         Row: {
           created_at: string;
-          description: string;
+          description: string | null;
           og_image_path: string | null;
           path: string;
-          title: string;
+          title: string | null;
           updated_at: string;
+          updated_by: string | null;
         };
         ComputedFields: never;
         Insert: {
           created_at?: string;
-          description: string;
+          description?: string | null;
           og_image_path?: string | null;
           path: string;
-          title: string;
+          title?: string | null;
           updated_at?: string;
+          updated_by?: string | null;
         };
         Update: {
           created_at?: string;
-          description?: string;
+          description?: string | null;
           og_image_path?: string | null;
           path?: string;
-          title?: string;
+          title?: string | null;
           updated_at?: string;
+          updated_by?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "seo_pages_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "admin_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       team_invites: {
         Row: {
