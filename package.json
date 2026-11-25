@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:browsers": "playwright test --config playwright.browsers.config.ts",
     "check": "npm run typecheck && npm run lint && npm run test",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
