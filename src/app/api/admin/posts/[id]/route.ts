@@ -1,5 +1,8 @@
+import { after } from "next/server";
 import { z } from "zod";
 import { adminRequest, dbError, notFound, refresh } from "@/lib/admin-route";
+import { sendSecurityAlert } from "@/lib/email/send";
+import { deleteAlertEmail } from "@/lib/email/templates";
 import { json } from "@/lib/http";
 import { audit } from "@/lib/security/audit";
 import { postSchema, publishSchema } from "@/lib/validation/admin";
@@ -42,7 +45,7 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/admin/pos
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .is("deleted_at", null)
-    .select("id")
+    .select("id, title")
     .maybeSingle();
   if (error) return dbError(error);
   if (!gone) return notFound("post");
@@ -54,5 +57,18 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/admin/pos
     ipHash: req.ipHash,
   });
   refresh("journal");
+  const actorName = req.identity.fullName;
+  after(() =>
+    sendSecurityAlert(
+      "post delete",
+      deleteAlertEmail({
+        actorName,
+        action: "deleted",
+        entityLabel: `Journal post "${gone.title}"`,
+        when: new Date(),
+        restoreHint: "The post is hidden, not erased. Olideen Technologies can restore it if it was a mistake.",
+      }),
+    ),
+  );
   return json({ ok: true });
 }
