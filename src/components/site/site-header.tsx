@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { listPosts } from "@/lib/data/public";
 import { SiteNav, type NavLink } from "./site-nav";
@@ -13,17 +14,10 @@ export async function navLinks(): Promise<NavLink[]> {
   ];
 }
 
-export function Wordmark({ withTagline = false }: { withTagline?: boolean }) {
+export function Wordmark() {
   return (
-    <span className="flex flex-col">
-      <span className="font-serif text-[21px] leading-none font-bold tracking-[0.12em] text-navy uppercase sm:text-2xl">
-        Bargain Breaks
-      </span>
-      {withTagline && (
-        <span className="mt-2 text-[10px] leading-none tracking-wide-plus text-muted uppercase">
-          Curated holiday stays
-        </span>
-      )}
+    <span className="font-serif text-[21px] leading-none font-bold tracking-[0.12em] text-navy uppercase sm:text-2xl">
+      Bargain Breaks
     </span>
   );
 }
@@ -32,10 +26,17 @@ export async function SiteHeader() {
   const links = await navLinks();
   return (
     <header className="relative border-b border-line bg-white">
-      <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-5 sm:px-8">
-        <Link href="/" className="-my-2 py-2">
-          <Wordmark withTagline />
-          <span className="sr-only">, home</span>
+      <div className="mx-auto flex h-[84px] max-w-[1280px] items-center justify-between px-5 sm:px-8">
+        <Link href="/" className="shrink-0">
+          <Image
+            src="/images/logo.webp"
+            alt="Bargain Breaks, home"
+            width={760}
+            height={382}
+            preload
+            sizes="160px"
+            className="h-[60px] w-auto sm:h-[68px]"
+          />
         </Link>
         <SiteNav links={links} />
       </div>
