@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getSeoPage } from "@/lib/data/public";
 import { publicEnv } from "@/lib/env";
-import { publicImageUrl } from "@/lib/storage";
+import { resolvePageSeo, type SeoPath } from "@/lib/seo-pages";
 
 export function absoluteUrl(path: string): string {
   return `${publicEnv.siteUrl}${path}`;
@@ -32,14 +32,8 @@ export function buildMetadata(path: string, seo: PageSeo): Metadata {
   };
 }
 
-export async function staticPageMetadata(path: string, fallback: PageSeo): Promise<Metadata> {
-  const row = await getSeoPage(path);
-  if (!row) return buildMetadata(path, fallback);
-  return buildMetadata(path, {
-    title: row.title,
-    description: row.description,
-    image: row.og_image_path ? publicImageUrl("property-photos", row.og_image_path) : null,
-  });
+export async function staticPageMetadata(path: SeoPath): Promise<Metadata> {
+  return buildMetadata(path, resolvePageSeo(path, await getSeoPage(path)));
 }
 
 export function trimDescription(text: string, max = 155): string {

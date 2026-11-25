@@ -49,7 +49,13 @@ export default async function EditPostPage({ params }: PageProps<"/admin/journal
           <PostForm post={post} canDelete={identity.role === "owner"} />
         </AdminCard>
         <AdminCard title="Cover photo" icon={ImageIcon} className="self-start">
-          <CoverPicker postId={post.id} path={post.featured_image_path} />
+          <CoverPicker
+            url={`/api/admin/posts/${post.id}/cover`}
+            bucket="blog-images"
+            path={post.featured_image_path}
+            noun="cover photo"
+            empty="No cover photo. Posts look best with one."
+          />
         </AdminCard>
       </div>
     </>

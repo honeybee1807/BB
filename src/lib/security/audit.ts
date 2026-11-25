@@ -46,7 +46,9 @@ type AuditAction =
   | "team.role"
   | "team.deactivate"
   | "team.reactivate"
-  | "team.remove";
+  | "team.remove"
+  | "seo.update"
+  | "seo.image";
 
 type AuditEntry = {
   actorId: string | null;

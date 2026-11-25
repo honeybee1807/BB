@@ -6,10 +6,7 @@ import { TrustPoints } from "@/components/site/trust-points";
 import { staticPageMetadata } from "@/lib/seo";
 
 export function generateMetadata(): Promise<Metadata> {
-  return staticPageMetadata("/about", {
-    title: "About Us | Bargain Breaks",
-    description: "Who we are and how we choose halal-conscious holiday accommodation for families.",
-  });
+  return staticPageMetadata("/about");
 }
 
 export default function AboutPage() {

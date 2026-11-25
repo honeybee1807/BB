@@ -8,10 +8,7 @@ import { staticPageMetadata } from "@/lib/seo";
 import { publicImageUrl } from "@/lib/storage";
 
 export function generateMetadata(): Promise<Metadata> {
-  return staticPageMetadata("/journal", {
-    title: "Journal | Bargain Breaks",
-    description: "Travel ideas and guides for halal-friendly holidays in South Africa.",
-  });
+  return staticPageMetadata("/journal");
 }
 
 export default async function JournalPage() {

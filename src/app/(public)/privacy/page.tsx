@@ -4,10 +4,7 @@ import { SectionHeading } from "@/components/site/section-heading";
 import { staticPageMetadata } from "@/lib/seo";
 
 export function generateMetadata(): Promise<Metadata> {
-  return staticPageMetadata("/privacy", {
-    title: "Privacy Policy | Bargain Breaks",
-    description: "How Bargain Breaks collects, uses and protects your personal information under POPIA.",
-  });
+  return staticPageMetadata("/privacy");
 }
 
 const SECTIONS = [

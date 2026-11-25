@@ -8,10 +8,7 @@ import { plural } from "@/lib/format";
 import { staticPageMetadata } from "@/lib/seo";
 
 export function generateMetadata(): Promise<Metadata> {
-  return staticPageMetadata("/properties", {
-    title: "Holiday Homes and Resorts | Bargain Breaks",
-    description: "Browse halal accommodation across the Drakensberg and beyond, with details of every home.",
-  });
+  return staticPageMetadata("/properties");
 }
 
 const select = "h-12 w-full rounded-public border border-field bg-white px-3 text-[15px] text-ink";

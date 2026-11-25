@@ -160,7 +160,7 @@ export async function getPost(slug: string): Promise<Post | null> {
   return posts.find((p) => p.slug === slug) ?? null;
 }
 
-export type SeoPage = { title: string; description: string; og_image_path: string | null };
+export type SeoPage = { title: string | null; description: string | null; og_image_path: string | null };
 
 export async function getSeoPage(path: string): Promise<SeoPage | null> {
   "use cache";

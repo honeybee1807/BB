@@ -7,10 +7,7 @@ import { staticPageMetadata } from "@/lib/seo";
 import { contactLinks } from "@/lib/site";
 
 export function generateMetadata(): Promise<Metadata> {
-  return staticPageMetadata("/contact", {
-    title: "Contact Us | Bargain Breaks",
-    description: "Send us an inquiry about halal accommodation and we will confirm the details personally.",
-  });
+  return staticPageMetadata("/contact");
 }
 
 export default function ContactPage() {

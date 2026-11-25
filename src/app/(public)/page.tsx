@@ -17,10 +17,7 @@ import { absoluteUrl, staticPageMetadata } from "@/lib/seo";
 const hasHeroPhoto = existsSync(join(process.cwd(), "public", "images", "hero.webp"));
 
 export function generateMetadata(): Promise<Metadata> {
-  return staticPageMetadata("/", {
-    title: "Halal Accommodation South Africa | Bargain Breaks",
-    description: "Halal-conscious holiday homes from the coast to the mountains, personally reviewed by Naseema.",
-  });
+  return staticPageMetadata("/");
 }
 
 function Hero() {
