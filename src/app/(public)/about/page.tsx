@@ -47,7 +47,7 @@ export default function AboutPage() {
             </Link>
           </div>
         </div>
-        <TrustPoints />
+        <TrustPoints headingLevel={2} />
       </div>
     </div>
   );

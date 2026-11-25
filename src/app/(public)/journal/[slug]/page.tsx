@@ -7,7 +7,7 @@ import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { JsonLd } from "@/components/site/json-ld";
 import { getPost, listPosts, staticParams } from "@/lib/data/public";
 import { formatLongDate } from "@/lib/format";
-import { absoluteUrl, buildMetadata, trimDescription } from "@/lib/seo";
+import { SHARE_IMAGE, absoluteUrl, buildMetadata, trimDescription } from "@/lib/seo";
 import { publicImageUrl } from "@/lib/storage";
 
 export async function generateStaticParams() {
@@ -36,13 +36,21 @@ async function PostView({ params }: { params: PageProps<"/journal/[slug]">["para
     <article>
       <JsonLd
         data={{
-          "@type": "Article",
+          "@type": "BlogPosting",
           headline: post.title,
+          description: post.seo_description ?? trimDescription(post.excerpt ?? post.body_md),
           url: absoluteUrl(`/journal/${post.slug}`),
-          ...(image ? { image: [image] } : {}),
+          mainEntityOfPage: absoluteUrl(`/journal/${post.slug}`),
+          // posts without a cover use the share image, so rich results always have one
+          image: [image ?? absoluteUrl(SHARE_IMAGE.url)],
           ...(post.published_at ? { datePublished: post.published_at } : {}),
           dateModified: post.updated_at,
-          publisher: { "@type": "Organization", name: "Bargain Breaks" },
+          author: { "@type": "Organization", name: "Bargain Breaks", url: absoluteUrl("/") },
+          publisher: {
+            "@type": "Organization",
+            name: "Bargain Breaks",
+            logo: { "@type": "ImageObject", url: absoluteUrl(SHARE_IMAGE.url) },
+          },
         }}
       />
       <Breadcrumbs

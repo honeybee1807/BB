@@ -80,7 +80,7 @@ async function PropertyView({ params }: { params: PageProps<"/properties/[slug]"
           "@type": "LodgingBusiness",
           name: p.name,
           url: absoluteUrl(`/properties/${p.slug}`),
-          image: photos.map((ph) => ph.full),
+          ...(photos.length ? { image: photos.map((ph) => ph.full) } : {}),
           description: p.summary ?? describe(p),
           address: {
             "@type": "PostalAddress",
