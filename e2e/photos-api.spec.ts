@@ -107,8 +107,40 @@ test("the stored photo carries no EXIF or location data", async () => {
   expect(meta.exif).toBeUndefined();
 });
 
+test("five large phone photos upload and are stored small", async () => {
+  const before = (await rows()).length;
+  for (let i = 0; i < 5; i++) {
+    const big = await sharp({
+      create: {
+        width: 4032,
+        height: 3024,
+        channels: 3,
+        background: "#808080",
+        noise: { type: "gaussian", mean: 128, sigma: 20 },
+      },
+    })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+    expect(big.length).toBeGreaterThan(3 * 1024 * 1024);
+    const { res } = await upload(big);
+    expect(res.status(), await res.text()).toBe(200);
+    const { id } = (await res.json()) as { id: string };
+    const { data: saved } = await admin
+      .from("property_photos")
+      .select("storage_path, thumb_path, width")
+      .eq("id", id)
+      .single();
+    expect(saved!.width).toBe(1920);
+    const full = (await admin.storage.from("property-photos").download(saved!.storage_path)).data!;
+    const thumb = (await admin.storage.from("property-photos").download(saved!.thumb_path)).data!;
+    expect(full.size).toBeLessThan(big.length / 3);
+    expect((await sharp(Buffer.from(await thumb.arrayBuffer())).metadata()).width).toBe(640);
+  }
+  expect(await rows()).toHaveLength(before + 5);
+});
+
 test("the 21st photo is refused and its upload is cleared away", async () => {
-  const filler = Array.from({ length: 17 }, (_, i) => ({
+  const filler = Array.from({ length: 12 }, (_, i) => ({
     property_id: homeId,
     storage_path: `${homeId}/filler-${i}.webp`,
     thumb_path: `${homeId}/filler-${i}-640.webp`,
@@ -120,5 +152,5 @@ test("the 21st photo is refused and its upload is cleared away", async () => {
   expect(await res.text()).toContain("up to 20 photos");
   expect(await tmpExists(path)).toBe(false);
   expect(await rows()).toHaveLength(20);
-  expect(await storedFiles()).toHaveLength(6);
+  expect(await storedFiles()).toHaveLength(16);
 });
