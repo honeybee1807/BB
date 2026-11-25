@@ -26,8 +26,21 @@ export function formatSast(date: Date): string {
   return `${formatted} SAST`;
 }
 
-function render(subject: string, heading: string, rows: Array<[string, string]>, closing: string[]): EmailContent {
-  const text = [heading, "", ...rows.map(([k, v]) => `${k}: ${v}`), "", ...closing].join("\n");
+function render(
+  subject: string,
+  heading: string,
+  rows: Array<[string, string]>,
+  closing: string[],
+  link?: { label: string; href: string },
+): EmailContent {
+  const text = [
+    heading,
+    "",
+    ...rows.map(([k, v]) => `${k}: ${v}`),
+    ...(link ? ["", `${link.label}: ${link.href}`] : []),
+    "",
+    ...closing,
+  ].join("\n");
   const html = [
     `<div style="font-family:Arial,Helvetica,sans-serif;color:#1b2730;max-width:560px">`,
     `<h1 style="font-size:18px;color:#0e2a3d">${escapeHtml(heading)}</h1>`,
@@ -37,6 +50,11 @@ function render(subject: string, heading: string, rows: Array<[string, string]>,
         `<tr><td style="padding:4px 12px 4px 0;color:#5b6770">${escapeHtml(k)}</td><td style="padding:4px 0">${escapeHtml(v)}</td></tr>`,
     ),
     `</table>`,
+    ...(link
+      ? [
+          `<p style="margin:20px 0"><a href="${escapeHtml(link.href)}" style="background:#0e2a3d;color:#ffffff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px">${escapeHtml(link.label)}</a></p>`,
+        ]
+      : []),
     ...closing.map((line) => `<p style="font-size:14px">${escapeHtml(line)}</p>`),
     `</div>`,
   ].join("");
@@ -105,6 +123,23 @@ export function deleteAlertEmail(input: {
       ["When", formatSast(input.when)],
     ],
     [input.restoreHint, "If you did not expect this, contact Olideen Technologies."],
+  );
+}
+
+// The link carries the only copy of the token; it is never stored or logged.
+export function teamInviteEmail(input: { inviterName: string; roleLabel: string; link: string; expires: Date }) {
+  return render(
+    "You're invited to the Bargain Breaks admin",
+    `${input.inviterName} has invited you to help run Bargain Breaks`,
+    [
+      ["Role", input.roleLabel],
+      ["Link works until", formatSast(input.expires)],
+    ],
+    [
+      "The link can be used once. If it has expired, ask for a new invite.",
+      "If you weren't expecting this, you can ignore this email.",
+    ],
+    { label: "Set up your account", href: input.link },
   );
 }
 

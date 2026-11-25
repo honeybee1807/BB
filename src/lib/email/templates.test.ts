@@ -6,6 +6,7 @@ import {
   inquiryEmail,
   lockoutAlertEmail,
   loginAlertEmail,
+  teamInviteEmail,
 } from "./templates";
 
 const when = new Date("2026-11-23T19:05:00Z");
@@ -122,5 +123,24 @@ describe("inquiry email", () => {
     const email = inquiryEmail(base);
     expect(email.html).toContain("Ground floor &lt;please&gt;");
     expect(email.html).not.toContain("<please>");
+  });
+});
+
+describe("team invite email", () => {
+  const link = "https://example.com/admin/invite#abc_DEF-123";
+  const email = teamInviteEmail({ inviterName: "Naseema <b>", roleLabel: "Team member", link, expires: when });
+
+  it("links to the invite in both the text and the html", () => {
+    expect(email.text).toContain(link);
+    expect(email.html).toContain(`href="${link}"`);
+  });
+
+  it("says when the link stops working, in SAST", () => {
+    expect(email.text).toContain("23 Nov 2026, 21:05 SAST");
+  });
+
+  it("escapes the inviter name in the html", () => {
+    expect(email.html).toContain("Naseema &lt;b&gt;");
+    expect(email.html).not.toContain("<b>");
   });
 });

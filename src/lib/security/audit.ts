@@ -38,7 +38,15 @@ type AuditAction =
   | "post.delete"
   | "testimonial.create"
   | "testimonial.update"
-  | "testimonial.delete";
+  | "testimonial.delete"
+  | "team.invite"
+  | "team.invite_resend"
+  | "team.invite_cancel"
+  | "team.join"
+  | "team.role"
+  | "team.deactivate"
+  | "team.reactivate"
+  | "team.remove";
 
 type AuditEntry = {
   actorId: string | null;

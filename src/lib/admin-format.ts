@@ -12,6 +12,10 @@ export const STATUS_LABELS: Record<InquiryStatus, string> = {
 
 export const STATUSES = Object.keys(STATUS_LABELS) as InquiryStatus[];
 
+export type AdminRole = Database["public"]["Enums"]["admin_role"];
+
+export const ROLE_LABELS: Record<AdminRole, string> = { owner: "Owner", team_member: "Team member" };
+
 export const ACCOMMODATION_LABELS = {
   no_preference: "No preference",
   resort: "Resort",

@@ -3,7 +3,8 @@ import { Resend } from "resend";
 import { serverEnv } from "@/lib/env.server";
 import type { EmailContent } from "./templates";
 
-type SendResult = { sent: boolean };
+// "skipped" means Resend is not set up, as in local development.
+type SendResult = { sent: boolean; skipped?: true };
 
 let resend: Resend | undefined;
 
@@ -13,7 +14,7 @@ async function sendEmail(kind: string, to: string[], content: EmailContent, repl
   const from = serverEnv.emailFrom;
   if (!apiKey || !from || to.length === 0) {
     console.warn(`[email] ${kind}: not configured, skipped`);
-    return { sent: false };
+    return { sent: false, skipped: true };
   }
   try {
     resend ??= new Resend(apiKey);
@@ -38,6 +39,10 @@ async function sendEmail(kind: string, to: string[], content: EmailContent, repl
 
 export function sendSecurityAlert(kind: string, content: EmailContent): Promise<SendResult> {
   return sendEmail(kind, serverEnv.securityAlertTo, content);
+}
+
+export function sendTeamInvite(to: string, content: EmailContent): Promise<SendResult> {
+  return sendEmail("team invite", [to], content);
 }
 
 export function sendInquiryAlert(content: EmailContent, guestEmail: string): Promise<SendResult> {

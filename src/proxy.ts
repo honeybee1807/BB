@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authCookieOptions } from "@/lib/supabase/cookie-options";
 import type { Database } from "@/types/database";
 
-const PUBLIC_ADMIN_PAGES = new Set(["/admin/login"]);
+const PUBLIC_ADMIN_PAGES = new Set(["/admin/login", "/admin/invite"]);
 
 // Admin paths only, so public pages stay static. Refreshes the session (the refresh
 // token rotates) and returns the 404 early for admin pages when there's no session.

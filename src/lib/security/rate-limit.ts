@@ -10,8 +10,21 @@ export const INQUIRY_LIMITS = [
   { bucket: "inquiry_ip_day", max: 20, windowSeconds: 24 * 60 * 60 },
 ] as const;
 
+// Sending and resending both count, per owner and per invited address.
+export const INVITE_LIMITS = {
+  owner: { bucket: "invite_owner", max: 10, windowSeconds: 60 * 60 },
+  email: { bucket: "invite_email", max: 3, windowSeconds: 24 * 60 * 60 },
+} as const;
+
+export const ACCEPT_LIMIT = { bucket: "invite_accept_ip", max: 10, windowSeconds: 15 * 60 } as const;
+
 type RateLimitBucket =
-  "login_fail_email" | "login_fail_ip" | "mfa_fail_user" | (typeof INQUIRY_LIMITS)[number]["bucket"];
+  | "login_fail_email"
+  | "login_fail_ip"
+  | "mfa_fail_user"
+  | (typeof INQUIRY_LIMITS)[number]["bucket"]
+  | (typeof INVITE_LIMITS)[keyof typeof INVITE_LIMITS]["bucket"]
+  | typeof ACCEPT_LIMIT.bucket;
 
 // Counts and records in one locked step, so parallel requests can't slip past the limit.
 export async function hit(bucket: RateLimitBucket, keyHash: string, windowSeconds: number, max: number) {

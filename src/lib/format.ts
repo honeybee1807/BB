@@ -19,6 +19,10 @@ export function formatLongDate(value: string): string {
   }).format(new Date(value));
 }
 
+export function hasPassed(timestamp: string, now: Date = new Date()): boolean {
+  return Date.parse(timestamp) <= now.getTime();
+}
+
 // YYYY-MM-DD in South African time, so "today" doesn't flip at midnight UTC
 export function todayInSast(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Johannesburg" }).format(now);
