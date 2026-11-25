@@ -5,8 +5,9 @@ select no_plan();
 
 select tables_are('public', array[
   'admin_profiles', 'regions', 'estates', 'properties', 'property_photos', 'availability_blocks',
-  'inquiries', 'blog_posts', 'seo_pages', 'audit_log', 'rate_limits', 'testimonials'
-], 'public schema holds exactly the approved tables');
+  'inquiries', 'blog_posts', 'seo_pages', 'audit_log', 'rate_limits', 'testimonials',
+  'team_invites'
+],'public schema holds exactly the approved tables');
 
 select is_empty($$select tablename from pg_tables where schemaname = 'public' and not rowsecurity$$,
   'every public table has RLS enabled');

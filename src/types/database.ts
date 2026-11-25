@@ -536,6 +536,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      team_invites: {
+        Row: {
+          accepted_at: string | null;
+          cancelled_at: string | null;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string | null;
+          role: Database["public"]["Enums"]["admin_role"];
+          sent_at: string;
+          token_hash: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string | null;
+          cancelled_at?: string | null;
+          created_at?: string;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string | null;
+          role?: Database["public"]["Enums"]["admin_role"];
+          sent_at?: string;
+          token_hash: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          cancelled_at?: string | null;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string | null;
+          role?: Database["public"]["Enums"]["admin_role"];
+          sent_at?: string;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_invites_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "admin_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       testimonials: {
         Row: {
           created_at: string;
@@ -586,6 +634,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accept_team_invite: {
+        Args: { p_full_name: string; p_token_hash: string; p_user_id: string };
+        Returns: Database["public"]["Enums"]["admin_role"];
+      };
       assert_valid_date_range: { Args: { p_from: string; p_to: string }; Returns: undefined };
       block_dates: { Args: { p_from: string; p_property_id: string; p_to: string }; Returns: number };
       get_blocked_dates: { Args: { p_from: string; p_property_id: string; p_to: string }; Returns: string[] };
@@ -597,6 +649,18 @@ export type Database = {
         Returns: {
           full_name: string;
           id: string;
+        }[];
+      };
+      list_team: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          created_at: string;
+          email: string;
+          full_name: string;
+          id: string;
+          is_active: boolean;
+          last_sign_in_at: string;
+          role: Database["public"]["Enums"]["admin_role"];
         }[];
       };
       open_dates: { Args: { p_from: string; p_property_id: string; p_to: string }; Returns: number };
