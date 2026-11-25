@@ -49,7 +49,7 @@ function Hero() {
           </p>
           <Link
             href="/properties"
-            className="mt-8 inline-block bg-navy px-9 py-4 text-xs font-bold tracking-[0.16em] text-white uppercase transition-colors duration-150 hover:bg-navy-hover"
+            className="mt-8 inline-block bg-white px-9 py-4 text-xs font-bold tracking-[0.16em] text-navy uppercase transition-colors duration-150 hover:bg-frost"
           >
             Explore properties
           </Link>

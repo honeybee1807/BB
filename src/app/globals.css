@@ -38,6 +38,27 @@
   --bb-focus: #ffffff;
 }
 
+/* The public site uses light, soft blues; the client prefers them to dark navy. Text
+   tones are the lightest that still pass WCAG AA on white and on the pale backgrounds. */
+.site-theme {
+  --bb-navy: #2a72b0;
+  --bb-navy-hover: #2465a0;
+  --bb-navy-deep: #2a72b0;
+  --bb-teal: #2b78b8;
+  --bb-teal-hover: #2669a4;
+  --bb-teal-light: #e3f0fb;
+  --bb-sand: #bcdaf2;
+  --bb-sand-light: #eaf4fc;
+  --bb-gold: #8fbfe6;
+  --bb-ink: #2b4057;
+  --bb-muted: #5a6b82;
+  --bb-mist: #eef5fb;
+  --bb-frost: #f4f9fd;
+  --bb-line: #d7e6f2;
+  --bb-field: #768aa3;
+  --bb-focus: #2a72b0;
+}
+
 /* The admin has its own palette; the public site keeps the one above. The accent and muted
    tones are a shade darker than the design so small text still passes WCAG AA. */
 .admin-theme {
