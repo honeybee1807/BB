@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminRootLayout({ children }: LayoutProps<"/admin">) {
-  return <div className="flex min-h-full flex-1 flex-col bg-admin-bg text-ink">{children}</div>;
+  return <div className="admin-theme flex min-h-full flex-1 flex-col bg-admin-bg text-ink">{children}</div>;
 }

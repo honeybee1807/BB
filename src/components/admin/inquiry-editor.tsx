@@ -1,14 +1,17 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { STATUSES, STATUS_LABELS, type InquiryStatus } from "@/lib/admin-format";
 import type { Admin } from "@/lib/data/admin";
 import { useHydrated } from "@/lib/use-hydrated";
 import type { InquiryUpdate } from "@/lib/validation/admin";
+import { primaryButton } from "./card";
 import { updateInquiry } from "./requests";
 
-const field = "w-full rounded-lg border border-field bg-white px-3 text-sm text-ink";
+const field = "w-full rounded-xl border border-field bg-white px-4 text-[15px] text-ink";
+const label = "mb-2 block text-[11px] font-semibold tracking-[0.14em] text-navy uppercase";
 
 export function InquiryEditor({
   id,
@@ -58,45 +61,29 @@ export function InquiryEditor({
   }
 
   return (
-    <form method="post" onSubmit={save} noValidate className="flex flex-col gap-4">
+    <form method="post" onSubmit={save} noValidate className="flex flex-col gap-5">
       {!assignedTo && (
         <button
           type="button"
           disabled={!hydrated || state.kind === "saving"}
           onClick={() => void send({ assignedTo: me })}
-          className="h-10 rounded-lg bg-navy px-4 text-sm font-medium text-white hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${primaryButton} self-start`}
         >
+          <Check aria-hidden strokeWidth={2} className="size-4" />
           Claim this inquiry
         </button>
       )}
       <div>
-        <label htmlFor="edit-status" className="mb-1 block text-xs font-medium text-muted">
-          Status
-        </label>
-        <select
-          id="edit-status"
-          value={values.status}
-          onChange={(e) => setValues((v) => ({ ...v, status: e.target.value as InquiryStatus }))}
-          className={`${field} h-9`}
-        >
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label htmlFor="edit-assignee" className="mb-1 block text-xs font-medium text-muted">
-          Assigned to
+        <label htmlFor="edit-assignee" className={label}>
+          Assign to
         </label>
         <select
           id="edit-assignee"
           value={values.assignedTo}
           onChange={(e) => setValues((v) => ({ ...v, assignedTo: e.target.value }))}
-          className={`${field} h-9`}
+          className={`${field} h-12`}
         >
-          <option value="">Unassigned</option>
+          <option value="">Unclaimed</option>
           {assignedTo && !admins.some((a) => a.id === assignedTo) && (
             <option value={assignedTo} disabled>
               Previously assigned (no longer active)
@@ -110,25 +97,40 @@ export function InquiryEditor({
         </select>
       </div>
       <div>
-        <label htmlFor="edit-notes" className="mb-1 block text-xs font-medium text-muted">
-          Internal notes <span className="font-normal">(only the team sees these)</span>
+        <label htmlFor="edit-status" className={label}>
+          Status
+        </label>
+        <select
+          id="edit-status"
+          value={values.status}
+          onChange={(e) => setValues((v) => ({ ...v, status: e.target.value as InquiryStatus }))}
+          className={`${field} h-12`}
+        >
+          {STATUSES.map((st) => (
+            <option key={st} value={st}>
+              {STATUS_LABELS[st]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="edit-notes" className={label}>
+          Internal notes
         </label>
         <textarea
           id="edit-notes"
-          rows={6}
+          rows={5}
           maxLength={5000}
+          placeholder="Add a note for the team. Guests never see these."
           value={values.notes}
           onChange={(e) => setValues((v) => ({ ...v, notes: e.target.value }))}
-          className={`${field} py-2 leading-relaxed`}
+          className={`${field} py-3 leading-relaxed`}
         />
       </div>
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={!hydrated || !changed || state.kind === "saving"}
-          className="h-9 rounded-lg bg-teal px-4 text-sm font-medium text-white hover:bg-teal-hover disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {state.kind === "saving" ? "Saving..." : "Save changes"}
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="submit" disabled={!hydrated || !changed || state.kind === "saving"} className={primaryButton}>
+          {state.kind === "saving" ? "Saving..." : "Save update"}
+          <Check aria-hidden strokeWidth={2} className="size-4" />
         </button>
         <p
           role={state.kind === "error" ? "alert" : "status"}

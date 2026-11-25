@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AvailabilityCalendar } from "@/components/admin/availability-calendar";
@@ -7,7 +7,7 @@ import { AdminCard, outlineButton } from "@/components/admin/card";
 import { PageHeader } from "@/components/admin/page-header";
 import { dateRangeLabel } from "@/lib/admin-format";
 import { requireAdminPage } from "@/lib/auth/admin-session";
-import { isMonthKey, monthGrid, monthKey } from "@/lib/calendar";
+import { isMonthKey, monthGrid, monthKey, monthLabel } from "@/lib/calendar";
 import { adminProperties, blockedNights } from "@/lib/data/admin";
 import { addDays, todayInSast } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -51,12 +51,12 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/adm
 
   return (
     <>
-      <PageHeader
-        title="Availability"
-        description="Block the nights a home is not available. Guests never see this unless public availability is switched on."
-      />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-        <AdminCard title="Calendar for one home" icon={CalendarDays} className="self-start">
+      <PageHeader title="Availability" />
+      <div className="flex flex-col gap-6">
+        <AdminCard
+          title={home?.name ?? "Calendar"}
+          description={`${monthLabel(month, true)} · select a date to block or open it. Guests never see this unless public availability is switched on.`}
+        >
           <AvailabilityCalendar
             homes={homes}
             homeId={home?.id ?? null}
@@ -69,7 +69,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/adm
 
         <AdminCard
           title="All homes"
-          icon={LayoutGrid}
+          description={`${dateRangeLabel(days[0]!, days.at(-1)!)}. Select a night to block it, or a blocked night to open it.`}
           className="min-w-0"
           action={
             <div className="flex items-center gap-2">
@@ -89,9 +89,6 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/adm
             </div>
           }
         >
-          <p className="mb-3 text-sm text-muted">
-            {dateRangeLabel(days[0]!, days.at(-1)!)}. Select a night to block it, or a blocked night to open it.
-          </p>
           <AvailabilityGrid
             homes={homes}
             days={days}

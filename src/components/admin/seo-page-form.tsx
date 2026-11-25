@@ -1,6 +1,5 @@
 "use client";
 
-import { FileSearch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { publicEnv } from "@/lib/env";
@@ -55,7 +54,7 @@ export function SeoPageForm({
   }
 
   return (
-    <AdminCard title={label} icon={FileSearch}>
+    <AdminCard title={label}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <form method="post" onSubmit={submit} noValidate className="flex flex-col gap-4">
           <Field label="Search title" hint={countHint(title, SEO_SOFT_LIMITS.title, defaults.title)}>

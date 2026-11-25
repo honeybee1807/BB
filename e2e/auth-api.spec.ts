@@ -176,7 +176,7 @@ test.describe("team member session", () => {
     const dash = await api.get("/admin");
     expect(dash.status()).toBe(200);
     const html = await dash.text();
-    expect(html).toContain("Welcome back, E2E");
+    expect(html).toMatch(/Good (morning|afternoon|evening), E2E/);
     expect(html).not.toContain('href="/admin/team"');
     expect(html).not.toContain('href="/admin/settings"');
     for (const path of ["/admin/team", "/admin/settings", "/admin/regions"]) {

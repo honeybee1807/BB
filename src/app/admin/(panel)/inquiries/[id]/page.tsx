@@ -5,10 +5,10 @@ import { notFound } from "next/navigation";
 import { AdminCard, StatusPill } from "@/components/admin/card";
 import { InquiryEditor } from "@/components/admin/inquiry-editor";
 import { PageHeader } from "@/components/admin/page-header";
-import { ACCOMMODATION_LABELS, nights, stayRange } from "@/lib/admin-format";
+import { ACCOMMODATION_LABELS, budget, nights, stayRange } from "@/lib/admin-format";
 import { requireAdminPage } from "@/lib/auth/admin-session";
 import { activeAdmins, getInquiry } from "@/lib/data/admin";
-import { formatRand, plural } from "@/lib/format";
+import { plural } from "@/lib/format";
 import { formatSast } from "@/lib/email/templates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,12 +23,6 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
       <dd className="text-sm text-ink">{children}</dd>
     </div>
   );
-}
-
-function budget(min: number | null, max: number | null): string {
-  if (min === null && max === null) return "Not given";
-  if (min !== null && max !== null) return `${formatRand(min)} to ${formatRand(max)}`;
-  return min !== null ? `From ${formatRand(min)}` : `Up to ${formatRand(max!)}`;
 }
 
 export default async function InquiryPage({ params }: PageProps<"/admin/inquiries/[id]">) {

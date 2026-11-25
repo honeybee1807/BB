@@ -71,8 +71,7 @@ test("login form validates input and shows a neutral error", async ({ page }) =>
 test("team member sees the dashboard without owner links", async ({ page, isMobile }) => {
   await signIn(page, team);
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(page.getByText("Welcome back, Amina")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening), Amina$/ })).toBeVisible();
 
   if (isMobile) {
     const menu = page.getByRole("button", { name: "Open menu" });
@@ -84,10 +83,9 @@ test("team member sees the dashboard without owner links", async ({ page, isMobi
     await menu.click();
   }
   const nav = page.getByRole("navigation", { name: "Admin" });
-  await expect(nav.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Inquiries" })).toBeVisible();
-  await expect(nav.getByRole("link", { name: "Team" })).toHaveCount(0);
-  await expect(nav.getByRole("link", { name: "Settings" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Team & settings" })).toHaveCount(0);
   await expect(nav.getByRole("link", { name: "Owners" })).toHaveCount(0);
   await expectNoA11yViolations(page);
 
@@ -111,10 +109,9 @@ test("owner sets up two-factor before reaching the dashboard", async ({ page }) 
   await page.getByLabel("Authentication code").fill(totpCode(secret));
   await page.getByRole("button", { name: "Verify" }).click();
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByText("Welcome back, Naledi")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening), Naledi$/ })).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Admin", includeHidden: true });
-  await expect(nav.getByRole("link", { name: "Team", includeHidden: true })).toHaveCount(1);
-  await expect(nav.getByRole("link", { name: "Settings", includeHidden: true })).toHaveCount(1);
+  await expect(nav.getByRole("link", { name: "Team & settings", includeHidden: true })).toHaveCount(1);
 });
 
 test("signs out after 30 minutes without activity", async ({ page }) => {

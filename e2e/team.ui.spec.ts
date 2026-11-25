@@ -69,14 +69,15 @@ async function signInAsOwner(page: Page) {
 test("owner invites a team member", async ({ page, isMobile }) => {
   await signInAsOwner(page);
   if (isMobile) await page.getByRole("button", { name: "Open menu" }).click();
-  await page.getByRole("navigation", { name: "Admin" }).getByRole("link", { name: "Team" }).click();
-  await expect(page.getByRole("heading", { name: "Team", level: 1 })).toBeVisible();
+  await page.getByRole("navigation", { name: "Admin" }).getByRole("link", { name: "Team & settings" }).click();
+  await expect(page.getByRole("heading", { name: "Team & settings", level: 1 })).toBeVisible();
 
   const me = page.getByRole("listitem").filter({ hasText: owner.email });
   await expect(me.getByText("(you)")).toBeVisible();
   await expect(me.getByRole("button")).toHaveCount(0);
   await expect(me.getByRole("combobox")).toHaveCount(0);
 
+  await page.getByRole("button", { name: "Add team member" }).click();
   await page.getByLabel("Email address").fill("not an email");
   await page.getByRole("button", { name: "Send invite" }).click();
   await expect(page.getByText("Enter a valid email address.")).toBeVisible();
@@ -114,7 +115,7 @@ test("the invitee sets up their account and signs in", async ({ page }) => {
 
   await signIn(page, inviteEmail, newPassword);
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByText("Welcome back, Zainab")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Good (morning|afternoon|evening), Zainab$/ })).toBeVisible();
 
   await page.goto(`/admin/invite#${token}`);
   await page.getByLabel("Your name").fill(name);

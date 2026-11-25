@@ -2,10 +2,11 @@
 
 import { useId, useState } from "react";
 import { useHydrated } from "@/lib/use-hydrated";
+import { primaryButton } from "./card";
 import type { Result } from "./requests";
 
 export const inputClass =
-  "w-full rounded-lg border border-field bg-white px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-teal aria-invalid:border-danger";
+  "w-full rounded-xl border border-field bg-white px-3.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-teal aria-invalid:border-danger";
 
 export function Field({
   label,
@@ -22,7 +23,7 @@ export function Field({
   const described = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ") || undefined;
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-xs font-medium text-muted">
+      <label htmlFor={id} className="mb-1.5 block text-xs font-semibold text-navy">
         {label}
       </label>
       {children({ id, "aria-describedby": described, "aria-invalid": error ? true : undefined })}
@@ -94,11 +95,7 @@ export function SaveBar({ status, label = "Save changes" }: { status: Status; la
   const hydrated = useHydrated();
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <button
-        type="submit"
-        disabled={!hydrated || status.kind === "saving"}
-        className="h-10 rounded-lg bg-teal px-5 text-sm font-medium text-white hover:bg-teal-hover disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <button type="submit" disabled={!hydrated || status.kind === "saving"} className={primaryButton}>
         {status.kind === "saving" ? "Saving..." : label}
       </button>
       <StatusText status={status} />

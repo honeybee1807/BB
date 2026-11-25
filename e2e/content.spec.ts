@@ -72,8 +72,11 @@ async function signInAsOwner(page: Page) {
 test("owner adds a region and an estate", async ({ page }) => {
   const n = names();
   await signInAsOwner(page);
+  // the old address now leads to the Regions & estates section of Properties
   await page.goto("/admin/regions");
-  const addRegion = page.getByRole("region", { name: "Add a region" });
+  await expect(page).toHaveURL(/\/admin\/properties#regions$/);
+  await page.getByText("Add a region", { exact: true }).click();
+  const addRegion = page.locator("details").filter({ has: page.getByText("Add a region", { exact: true }) });
   await addRegion.getByLabel("Name").fill(n.region);
   await addRegion.getByRole("button", { name: "Add region" }).click();
   await expect(addRegion.getByText("Region added.")).toBeVisible();
@@ -147,7 +150,9 @@ test("a visible testimonial appears on the homepage", async ({ page }) => {
   const n = names();
   await signInAsOwner(page);
   await page.goto("/admin/testimonials");
-  const add = page.getByRole("region", { name: "Add a testimonial" });
+  await expect(page).toHaveURL(/\/admin\/journal#testimonials$/);
+  await page.getByText("Add a testimonial", { exact: true }).click();
+  const add = page.locator("details").filter({ has: page.getByText("Add a testimonial", { exact: true }) });
   await add.getByLabel("Guest name").fill(n.guest);
   await add.getByLabel("What they said").fill("Spotless and peaceful.");
   await add.getByLabel("Show on the website").check();

@@ -1,43 +1,23 @@
 "use client";
 
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Check, ChevronRight, House, MoreVertical } from "lucide-react";
-import Image from "next/image";
+import { Check, ChevronRight, MoreVertical } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { STATUSES, STATUS_LABELS, firstName, nights, stayRange, type InquiryStatus } from "@/lib/admin-format";
 import type { Admin, InquiryRow } from "@/lib/data/admin";
-import { publicImageUrl } from "@/lib/storage";
-import { Avatar, StatusPill } from "./card";
+import { StatusPill, tableHead } from "./card";
 import { updateInquiry } from "./requests";
 
-const item = "flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 outline-none data-highlighted:bg-admin-bg";
-const menu = "z-50 min-w-48 rounded-lg bg-white p-1 text-sm text-ink shadow-lg ring-1 ring-line";
+const item = "flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 outline-none data-highlighted:bg-admin-bg";
+const menu = "admin-theme z-50 min-w-48 rounded-xl bg-white p-1 text-sm text-ink shadow-lg ring-1 ring-line";
 
-function Assignee({ id, admins }: { id: string | null; admins: Admin[] }) {
+// someone deactivated since keeps the id; removing them clears it instead
+function claimLine(id: string | null, admins: Admin[]): string {
+  if (!id) return "Waiting to be claimed";
   const person = admins.find((a) => a.id === id);
-  // someone deactivated since; removing them clears the assignment instead
-  if (!person) return <span className="text-sm text-muted">{id ? "Previously assigned" : "Unassigned"}</span>;
-  return (
-    <span className="flex items-center gap-2 text-sm text-ink">
-      <Avatar name={person.full_name} />
-      {firstName(person.full_name)}
-    </span>
-  );
-}
-
-// photos are already 640px WebP thumbnails, so the optimiser is skipped
-function Thumb({ src }: { src: string | null }) {
-  return (
-    <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-mist">
-      {src ? (
-        <Image src={publicImageUrl("property-photos", src)} alt="" fill unoptimized className="object-cover" />
-      ) : (
-        <House aria-hidden strokeWidth={1.5} className="size-4 text-muted" />
-      )}
-    </span>
-  );
+  return person ? `Claimed by ${firstName(person.full_name)}` : "Previously assigned";
 }
 
 function RowMenu({
@@ -53,7 +33,7 @@ function RowMenu({
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
         onClick={(e) => e.stopPropagation()}
-        className="rounded-md p-1.5 text-muted hover:bg-admin-bg hover:text-navy"
+        className="rounded-full p-2 text-muted hover:bg-frost hover:text-navy"
       >
         <MoreVertical aria-hidden strokeWidth={1.5} className="size-4" />
         <span className="sr-only">Actions for {row.guest_name}</span>
@@ -125,7 +105,17 @@ function RowMenu({
   );
 }
 
-export function InquiryTable({ rows, admins }: { rows: InquiryRow[]; admins: Admin[] }) {
+export function InquiryTable({
+  rows,
+  admins,
+  query,
+  selected,
+}: {
+  rows: InquiryRow[];
+  admins: Admin[];
+  query: string;
+  selected: string | null;
+}) {
   const router = useRouter();
   const [message, setMessage] = useState("");
 
@@ -136,38 +126,35 @@ export function InquiryTable({ rows, admins }: { rows: InquiryRow[]; admins: Adm
     if (result.ok) router.refresh();
   }
 
-  const open = (id: string) => router.push(`/admin/inquiries/${id}`);
+  // the panel opens beside the list and keeps the current filters
+  const viewHref = (id: string) => `/admin/inquiries?${query ? `${query}&` : ""}view=${id}`;
 
   if (rows.length === 0) {
-    return <p className="rounded-lg bg-admin-bg px-4 py-6 text-center text-sm text-muted">No inquiries to show.</p>;
+    return <p className="rounded-xl bg-admin-bg px-4 py-6 text-center text-sm text-muted">No inquiries to show.</p>;
   }
 
-  // sized by the card, not the screen, because the dashboard card is much narrower than the inquiries page
   return (
     <div className="@container">
       <p aria-live="polite" className="sr-only">
         {message}
       </p>
 
-      <table className="hidden w-full text-left @3xl:table">
+      <table className="hidden w-full text-left @2xl:table">
         <thead>
-          <tr className="border-b border-line text-[11px] font-semibold tracking-[0.08em] whitespace-nowrap text-muted uppercase">
-            <th scope="col" className="py-2 pr-3 font-semibold">
-              Property
-            </th>
-            <th scope="col" className="py-2 pr-3 font-semibold">
+          <tr className={`border-b border-line ${tableHead}`}>
+            <th scope="col" className="py-3 pr-4 pl-4 font-semibold">
               Guest
             </th>
-            <th scope="col" className="py-2 pr-3 font-semibold">
+            <th scope="col" className="py-3 pr-4 font-semibold">
+              Property
+            </th>
+            <th scope="col" className="py-3 pr-4 font-semibold">
               Dates
             </th>
-            <th scope="col" className="py-2 pr-3 font-semibold">
+            <th scope="col" className="py-3 pr-4 font-semibold">
               Status
             </th>
-            <th scope="col" className="py-2 pr-3 font-semibold">
-              Assigned to
-            </th>
-            <th scope="col" className="w-10 py-2">
+            <th scope="col" className="w-12 py-3">
               <span className="sr-only">Actions</span>
             </th>
           </tr>
@@ -176,45 +163,32 @@ export function InquiryTable({ rows, admins }: { rows: InquiryRow[]; admins: Adm
           {rows.map((row) => (
             <tr
               key={row.id}
-              onClick={() => open(row.id)}
-              className="cursor-pointer border-b border-line last:border-0 hover:bg-admin-bg/60"
+              onClick={() => router.push(viewHref(row.id), { scroll: false })}
+              aria-current={row.id === selected ? "true" : undefined}
+              className={`cursor-pointer border-b border-line last:border-0 ${row.id === selected ? "bg-frost" : "hover:bg-admin-bg/70"}`}
             >
-              <td className="py-3 pr-3">
-                <span className="flex items-center gap-3">
-                  <Thumb src={row.property?.thumb ?? null} />
-                  <span className="min-w-0">
-                    <span className="block max-w-52 truncate text-sm font-semibold text-navy">
-                      {row.property?.name ?? "No home chosen"}
-                    </span>
-                    {row.property && (
-                      <span className="block truncate text-xs text-muted">{row.property.estate.name}</span>
-                    )}
-                  </span>
-                </span>
-              </td>
-              <td className="py-3 pr-3">
+              <td className="py-4 pr-4 pl-4">
                 <Link
-                  href={`/admin/inquiries/${row.id}`}
+                  href={viewHref(row.id)}
+                  scroll={false}
                   onClick={(e) => e.stopPropagation()}
-                  className="block text-sm font-semibold whitespace-nowrap text-navy hover:underline"
+                  className="block font-semibold whitespace-nowrap text-navy hover:underline"
                 >
                   {row.guest_name}
                 </Link>
-                <span className="block max-w-48 truncate text-xs text-muted" title={row.guest_email}>
-                  {row.guest_email}
-                </span>
+                <span className="mt-0.5 block text-sm text-muted">{claimLine(row.assigned_to, admins)}</span>
               </td>
-              <td className="py-3 pr-3 text-sm text-ink">
+              <td className="py-4 pr-4 text-ink">
+                <span className="block max-w-56 truncate">{row.property?.name ?? "No home chosen"}</span>
+              </td>
+              <td className="py-4 pr-4 text-ink">
                 <span className="block whitespace-nowrap">{stayRange(row.check_in, row.check_out)}</span>
-                <span className="block text-xs text-muted">{nights(row.check_in, row.check_out)}</span>
+                <span className="block text-sm text-muted">{nights(row.check_in, row.check_out)}</span>
               </td>
-              <td className="py-3 pr-3">
+              <td className="py-4 pr-4">
                 <StatusPill status={row.status} />
               </td>
-              <td className="py-3 pr-3">
-                <Assignee id={row.assigned_to} admins={admins} />
-              </td>
-              <td className="py-3 text-right">
+              <td className="py-4 text-right">
                 <RowMenu row={row} admins={admins} onChange={(u, done) => void change(row.id, u, done)} />
               </td>
             </tr>
@@ -222,31 +196,25 @@ export function InquiryTable({ rows, admins }: { rows: InquiryRow[]; admins: Adm
         </tbody>
       </table>
 
-      <ul className="flex flex-col gap-3 @3xl:hidden">
+      <ul className="flex flex-col gap-3 @2xl:hidden">
         {rows.map((row) => (
-          <li key={row.id} className="rounded-lg p-3 ring-1 ring-line">
+          <li
+            key={row.id}
+            className={`rounded-2xl p-4 ring-1 ${row.id === selected ? "bg-frost ring-sand" : "ring-line"}`}
+          >
             <div className="flex items-start justify-between gap-3">
-              <Link href={`/admin/inquiries/${row.id}`} className="flex min-w-0 items-center gap-3">
-                <Thumb src={row.property?.thumb ?? null} />
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-navy">{row.guest_name}</span>
-                  <span className="block truncate text-xs text-muted">
-                    {row.property ? `${row.property.name}, ${row.property.estate.name}` : "No home chosen"}
-                  </span>
-                </span>
+              <Link href={viewHref(row.id)} scroll={false} className="min-w-0">
+                <span className="block truncate font-semibold text-navy">{row.guest_name}</span>
+                <span className="block truncate text-sm text-muted">{claimLine(row.assigned_to, admins)}</span>
               </Link>
               <RowMenu row={row} admins={admins} onChange={(u, done) => void change(row.id, u, done)} />
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
               <span className="text-ink">
-                {stayRange(row.check_in, row.check_out)}
-                <span className="text-muted"> &middot; {nights(row.check_in, row.check_out)}</span>
+                {row.property?.name ?? "No home chosen"}
+                <span className="text-muted"> · {stayRange(row.check_in, row.check_out)}</span>
               </span>
               <StatusPill status={row.status} />
-            </div>
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <span className="truncate text-xs text-muted">{row.guest_email}</span>
-              <Assignee id={row.assigned_to} admins={admins} />
             </div>
           </li>
         ))}

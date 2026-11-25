@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  countChange,
-  dateRangeLabel,
-  firstName,
-  initials,
-  nights,
-  openRate,
-  pointsChange,
-  stayRange,
-} from "./admin-format";
+import { dateRangeLabel, firstName, greeting, initials, nights, stayRange, timeAgo } from "./admin-format";
 
 describe("names", () => {
   it("takes up to two initials", () => {
@@ -47,38 +38,26 @@ describe("stay dates", () => {
   });
 });
 
-describe("change lines", () => {
-  const period = "vs last month";
+describe("timeAgo", () => {
+  const now = new Date("2026-11-25T12:00:00Z");
 
-  it("shows a rise and a fall as whole percentages", () => {
-    expect(countChange(12, 10, period)).toEqual({ direction: "up", text: "Up 20% vs last month" });
-    expect(countChange(8, 10, period)).toEqual({ direction: "down", text: "Down 20% vs last month" });
+  it("counts minutes, then hours", () => {
+    expect(timeAgo("2026-11-25T11:59:40Z", now)).toBe("Just now");
+    expect(timeAgo("2026-11-25T11:46:00Z", now)).toBe("14 min ago");
+    expect(timeAgo("2026-11-25T11:00:00Z", now)).toBe("1 hour ago");
+    expect(timeAgo("2026-11-25T09:00:00Z", now)).toBe("3 hours ago");
   });
 
-  it("never divides by zero", () => {
-    expect(countChange(5, 0, period)).toEqual({ direction: "none", text: "No earlier data vs last month" });
-    expect(countChange(0, 0, period)).toEqual({ direction: "none", text: "No change vs last month" });
-  });
-
-  it("says no change when the counts match", () => {
-    expect(countChange(7, 7, period).text).toBe("No change vs last month");
-  });
-
-  it("compares rates in points", () => {
-    const p = "vs previous 30 days";
-    expect(pointsChange(84, 80, p)).toEqual({ direction: "up", text: "Up 4 points vs previous 30 days" });
-    expect(pointsChange(79, 80, p)).toEqual({ direction: "down", text: "Down 1 point vs previous 30 days" });
-    expect(pointsChange(84, null, p).text).toBe("No earlier data vs previous 30 days");
+  it("says yesterday, then gives the date", () => {
+    expect(timeAgo("2026-11-24T10:00:00Z", now)).toBe("Yesterday");
+    expect(timeAgo("2026-11-20T10:00:00Z", now)).toBe("20 November 2026");
   });
 });
 
-describe("open rate", () => {
-  it("is the share of nights that are not blocked", () => {
-    expect(openRate(300, 48)).toBe(84);
-    expect(openRate(30, 0)).toBe(100);
-  });
-
-  it("is null when there are no nights to measure", () => {
-    expect(openRate(0, 0)).toBeNull();
+describe("greeting", () => {
+  it("follows the time in South Africa", () => {
+    expect(greeting(new Date("2026-11-25T05:00:00Z"))).toBe("Good morning");
+    expect(greeting(new Date("2026-11-25T10:30:00Z"))).toBe("Good afternoon");
+    expect(greeting(new Date("2026-11-25T16:00:00Z"))).toBe("Good evening");
   });
 });

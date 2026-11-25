@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { dateRangeLabel } from "@/lib/admin-format";
@@ -150,7 +150,7 @@ export function AvailabilityCalendar({
             setEnd(null);
             go({ home: e.target.value });
           }}
-          className="h-9 min-w-0 flex-1 rounded-lg border border-field bg-white px-3 text-sm text-ink"
+          className="h-12 min-w-0 flex-1 rounded-xl border border-field bg-white px-4 text-[15px] text-ink"
         >
           {homes.length === 0 && <option value="">No homes yet</option>}
           {homes.map((h) => (
@@ -159,22 +159,22 @@ export function AvailabilityCalendar({
             </option>
           ))}
         </select>
-        <div className="flex h-9 items-center rounded-lg border border-line">
+        <div className="flex h-12 items-center rounded-xl border border-field bg-white">
           <button
             type="button"
             onClick={() => go({ month: shiftMonth(month, -1) })}
-            className="flex size-9 items-center justify-center rounded-l-lg hover:bg-admin-bg"
+            className="flex size-12 items-center justify-center rounded-l-xl hover:bg-admin-bg"
           >
             <ChevronLeft aria-hidden strokeWidth={1.5} className="size-4" />
             <span className="sr-only">Previous month</span>
           </button>
-          <span id="calendar-month" className="min-w-20 text-center text-sm font-medium text-navy">
+          <span id="calendar-month" className="min-w-28 text-center text-[15px] font-semibold text-navy">
             {monthLabel(month)}
           </span>
           <button
             type="button"
             onClick={() => go({ month: shiftMonth(month, 1) })}
-            className="flex size-9 items-center justify-center rounded-r-lg hover:bg-admin-bg"
+            className="flex size-12 items-center justify-center rounded-r-xl hover:bg-admin-bg"
           >
             <ChevronRight aria-hidden strokeWidth={1.5} className="size-4" />
             <span className="sr-only">Next month</span>
@@ -191,22 +191,22 @@ export function AvailabilityCalendar({
           ref={grid}
           role="grid"
           aria-label={`${home.name}, ${monthLabel(month, true)}`}
-          className="mt-4 flex flex-col gap-1"
+          className="mt-6 flex flex-col gap-1.5 sm:gap-2.5"
         >
-          <div role="row" className="grid grid-cols-7 gap-1">
+          <div role="row" className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
             {WEEKDAYS.map((d, i) => (
               <span
                 key={d}
                 role="columnheader"
                 aria-label={WEEKDAY_NAMES[i]}
-                className="py-1 text-center text-[11px] font-medium tracking-wide text-muted uppercase"
+                className="py-2 text-center text-[11px] font-semibold tracking-[0.14em] text-muted uppercase"
               >
                 {d}
               </span>
             ))}
           </div>
           {weeks.map((week) => (
-            <div key={week[0]!.date} role="row" className="grid grid-cols-7 gap-1">
+            <div key={week[0]!.date} role="row" className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
               {week.map(({ date, inMonth }) => {
                 const isBlocked = nights.has(date);
                 const past = date < today;
@@ -220,10 +220,8 @@ export function AvailabilityCalendar({
                       role="gridcell"
                       aria-disabled="true"
                       aria-label={label}
-                      className="flex aspect-square items-center justify-center text-xs text-muted/40"
-                    >
-                      {dateParts(date).day}
-                    </span>
+                      className="aspect-square sm:aspect-auto sm:h-24"
+                    />
                   );
                 }
                 return (
@@ -239,17 +237,20 @@ export function AvailabilityCalendar({
                     onKeyDown={(e) => onKey(e, date)}
                     onFocus={() => setFocus(date)}
                     className={[
-                      "relative flex aspect-square items-center justify-center rounded-lg text-sm transition-colors duration-150",
-                      past ? "cursor-default text-muted/60" : "cursor-pointer hover:ring-2 hover:ring-navy/25",
-                      isBlocked ? "bg-sand text-navy" : "text-ink",
-                      isToday ? "font-bold ring-2 ring-teal" : "",
-                      selected ? "outline-2 outline-offset-1 outline-navy" : "",
+                      "flex aspect-square flex-col items-center justify-center rounded-xl text-sm ring-1 transition-colors duration-150 sm:aspect-auto sm:h-24 sm:items-start sm:justify-between sm:p-3",
+                      past ? "cursor-default opacity-50" : "cursor-pointer hover:ring-2 hover:ring-teal",
+                      isBlocked ? "bg-navy text-white ring-navy" : "bg-white text-ink ring-line",
+                      isToday ? "ring-2 ring-teal" : "",
+                      selected ? "outline-2 outline-offset-2 outline-teal" : "",
                     ].join(" ")}
                   >
-                    {dateParts(date).day}
-                    {isBlocked && (
-                      <X aria-hidden strokeWidth={2} className="absolute top-1 right-1 size-2.5 text-navy/70" />
-                    )}
+                    <span className="font-semibold">{dateParts(date).day}</span>
+                    <span
+                      aria-hidden
+                      className={`hidden text-xs sm:block ${isBlocked ? "text-white/80" : "text-muted"}`}
+                    >
+                      {isBlocked ? "Blocked" : "Open"}
+                    </span>
                   </span>
                 );
               })}

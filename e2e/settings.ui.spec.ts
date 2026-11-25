@@ -57,8 +57,8 @@ async function signInAsOwner(page: Page) {
 test("owner edits a page's search title and sees it on the site", async ({ page, isMobile }) => {
   await signInAsOwner(page);
   if (isMobile) await page.getByRole("button", { name: "Open menu" }).click();
-  await page.getByRole("navigation", { name: "Admin" }).getByRole("link", { name: "Settings" }).click();
-  await expect(page.getByRole("heading", { name: "Settings", level: 1 })).toBeVisible();
+  await page.getByRole("navigation", { name: "Admin" }).getByRole("link", { name: "Team & settings" }).click();
+  await expect(page.getByRole("heading", { name: "Page settings" })).toBeVisible();
 
   const card = page.getByRole("region", { name: "About", exact: true });
   const title = card.getByLabel("Search title");

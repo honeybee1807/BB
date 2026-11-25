@@ -38,6 +38,31 @@
   --bb-focus: #ffffff;
 }
 
+/* The admin has its own palette; the public site keeps the one above. The accent and muted
+   tones are a shade darker than the design so small text still passes WCAG AA. */
+.admin-theme {
+  --bb-navy: #12386b;
+  --bb-navy-hover: #0d2c56;
+  --bb-navy-deep: #152854;
+  --bb-side-active: #284269;
+  --bb-side-text: #c9d6e8;
+  --bb-side-label: #8fa6c4;
+  --bb-teal: #2468a3;
+  --bb-teal-hover: #1c5689;
+  --bb-teal-light: #edf5fb;
+  --bb-sand: #bcd6ee;
+  --bb-sand-light: #e0f0fb;
+  --bb-ink: #17304f;
+  --bb-muted: #5a6b82;
+  --bb-frost: #edf5fb;
+  --bb-admin-bg: #f4f8fc;
+  --bb-line: #d7e6f2;
+  --bb-field: #768aa3;
+  --bb-open: #ffffff;
+  --bb-blocked: #12386b;
+  --bb-focus: #2468a3;
+}
+
 @theme inline {
   --color-navy: var(--bb-navy);
   --color-navy-hover: var(--bb-navy-hover);
@@ -63,12 +88,15 @@
   --color-alert: var(--bb-alert);
   --color-danger: var(--bb-danger);
   --color-focus: var(--bb-focus);
+  --color-side-active: var(--bb-side-active);
+  --color-side-text: var(--bb-side-text);
+  --color-side-label: var(--bb-side-label);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-heading), ui-serif, Georgia, serif;
 
   --radius-public: 2px;
-  --radius-card: 12px;
+  --radius-card: 22px;
   --radius-pill: 9999px;
 
   --tracking-display: 0.18em;

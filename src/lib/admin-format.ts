@@ -1,5 +1,5 @@
 import type { Database } from "@/types/database";
-import { dateParts, daysBetween, monthName } from "@/lib/format";
+import { dateParts, daysBetween, formatRand, monthName } from "@/lib/format";
 
 export type InquiryStatus = Database["public"]["Enums"]["inquiry_status"];
 
@@ -61,32 +61,28 @@ export function dateRangeLabel(from: string, to: string): string {
   return `${full(from)} to ${full(to)}`;
 }
 
-export type Change = { direction: "up" | "down" | "none"; text: string };
-
-// Inquiry counts compare as a percentage; a rate compares in percentage points.
-export function countChange(current: number, previous: number, period: string): Change {
-  if (previous === 0) {
-    return current === 0
-      ? { direction: "none", text: `No change ${period}` }
-      : { direction: "none", text: `No earlier data ${period}` };
-  }
-  const pct = Math.round(((current - previous) / previous) * 100);
-  if (pct === 0) return { direction: "none", text: `No change ${period}` };
-  return { direction: pct > 0 ? "up" : "down", text: `${pct > 0 ? "Up" : "Down"} ${Math.abs(pct)}% ${period}` };
+// e.g. "Just now", "14 min ago", "3 hours ago", "Yesterday", then the date
+export function timeAgo(iso: string, now: Date = new Date()): string {
+  const minutes = Math.floor((now.getTime() - Date.parse(iso)) / 60_000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  if (hours < 48) return "Yesterday";
+  return dateRangeLabel(iso.slice(0, 10), iso.slice(0, 10));
 }
 
-export function pointsChange(current: number | null, previous: number | null, period: string): Change {
-  if (current === null || previous === null) return { direction: "none", text: `No earlier data ${period}` };
-  const diff = current - previous;
-  if (diff === 0) return { direction: "none", text: `No change ${period}` };
-  return {
-    direction: diff > 0 ? "up" : "down",
-    text: `${diff > 0 ? "Up" : "Down"} ${Math.abs(diff)} ${Math.abs(diff) === 1 ? "point" : "points"} ${period}`,
-  };
+const SAST_HOUR = new Intl.DateTimeFormat("en-ZA", { timeZone: "Africa/Johannesburg", hour: "numeric", hour12: false });
+
+export function greeting(now: Date = new Date()): string {
+  const hour = Number(SAST_HOUR.format(now)) % 24;
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
-// Whole percentage of open nights, or null when there is nothing to measure.
-export function openRate(totalNights: number, blockedNights: number): number | null {
-  if (totalNights <= 0) return null;
-  return Math.round(((totalNights - blockedNights) / totalNights) * 100);
+export function budget(min: number | null, max: number | null): string {
+  if (min === null && max === null) return "Not given";
+  if (min !== null && max !== null) return `${formatRand(min)} to ${formatRand(max)}`;
+  return min !== null ? `From ${formatRand(min)}` : `Up to ${formatRand(max!)}`;
 }

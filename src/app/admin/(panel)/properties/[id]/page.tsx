@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, Images } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -53,7 +53,7 @@ export default async function EditPropertyPage({ params }: PageProps<"/admin/pro
         >
           <PropertyForm property={details} regions={regions} />
         </AdminCard>
-        <AdminCard title="Photos" icon={Images} className="self-start">
+        <AdminCard title="Photos" className="self-start">
           <PhotoManager propertyId={property.id} photos={photos} />
         </AdminCard>
       </div>

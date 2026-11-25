@@ -12,11 +12,11 @@ type Home = { id: string; name: string };
 
 function Mark({ blocked }: { blocked: boolean }) {
   return blocked ? (
-    <span className="flex size-7 items-center justify-center rounded-md bg-sand text-navy">
+    <span className="flex size-7 items-center justify-center rounded-lg bg-navy text-white">
       <X aria-hidden strokeWidth={2} className="size-3.5" />
     </span>
   ) : (
-    <span className="flex size-7 items-center justify-center rounded-md bg-teal-light/50 ring-1 ring-teal-light">
+    <span className="flex size-7 items-center justify-center rounded-lg bg-white ring-1 ring-line">
       <span aria-hidden className="size-1.5 rounded-full bg-teal" />
     </span>
   );
@@ -156,13 +156,13 @@ export function AvailabilityLegend() {
   return (
     <ul className="mt-4 flex flex-wrap gap-5 text-xs text-muted">
       <li className="flex items-center gap-2">
-        <span className="flex size-4 items-center justify-center rounded bg-teal-light/50 ring-1 ring-teal-light">
+        <span className="flex size-4 items-center justify-center rounded bg-white ring-1 ring-line">
           <span aria-hidden className="size-1 rounded-full bg-teal" />
         </span>
         Available
       </li>
       <li className="flex items-center gap-2">
-        <span className="flex size-4 items-center justify-center rounded bg-sand text-navy">
+        <span className="flex size-4 items-center justify-center rounded bg-navy text-white">
           <X aria-hidden strokeWidth={2} className="size-2.5" />
         </span>
         Blocked

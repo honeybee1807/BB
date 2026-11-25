@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, ImageIcon } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -48,7 +48,7 @@ export default async function EditPostPage({ params }: PageProps<"/admin/journal
         >
           <PostForm post={post} canDelete={identity.role === "owner"} />
         </AdminCard>
-        <AdminCard title="Cover photo" icon={ImageIcon} className="self-start">
+        <AdminCard title="Cover photo" className="self-start">
           <CoverPicker
             url={`/api/admin/posts/${post.id}/cover`}
             bucket="blog-images"
