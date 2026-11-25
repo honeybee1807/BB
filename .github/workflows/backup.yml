@@ -1,0 +1,89 @@
+name: Database backup
+
+# Manual only. The nightly schedule is added once the repository decision is made.
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.BACKUP_DB_URL }}
+      AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_B2_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_B2_APP_KEY }}
+      B2_ENDPOINT: ${{ secrets.BACKUP_B2_ENDPOINT }}
+      B2_BUCKET: ${{ secrets.BACKUP_B2_BUCKET }}
+      # Backblaze rejects the newer default checksum headers
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+    steps:
+      - name: Check the secrets are set
+        run: |
+          missing=0
+          for name in SUPABASE_DB_URL AGE_RECIPIENT AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY B2_ENDPOINT B2_BUCKET; do
+            if [ -z "${!name}" ]; then echo "::error::A backup secret is missing ($name)"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Install age and psql
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age postgresql-client > /dev/null
+
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 3.3.0
+
+      # Tool output goes to a private file, so a failing command cannot print data or the connection string.
+      - name: Dump, encrypt and upload
+        run: |
+          set -euo pipefail
+          umask 077
+          work="$(mktemp -d)"
+          trap 'find "$work" -type f -exec shred -u {} +; rm -rf "$work"' EXIT
+          cd "$work"
+          mkdir dump
+          log="$work/log"
+
+          run() { "$@" >> "$log" 2>&1 || { echo "::error::$step failed"; exit 1; }; }
+
+          step="Roles dump"
+          run supabase db dump --db-url "$SUPABASE_DB_URL" -f dump/roles.sql --role-only
+          step="Schema dump"
+          run supabase db dump --db-url "$SUPABASE_DB_URL" -f dump/schema.sql
+          step="Data dump"
+          run supabase db dump --db-url "$SUPABASE_DB_URL" -f dump/data.sql --use-copy --data-only \
+            -x storage.buckets_analytics,storage.buckets_vectors,storage.vector_indexes,storage.iceberg_namespaces,storage.iceberg_tables,storage.bucket_lifecycle_states,storage.lifecycle_abandoned_artifacts
+          step="Scheduled jobs export"
+          psql "$SUPABASE_DB_URL" -At -v ON_ERROR_STOP=1 \
+            -c "select format('select cron.schedule(%L, %L, %L);', jobname, schedule, command) from cron.job order by jobid" \
+            > dump/cron.sql 2>> "$log" || { echo "::error::$step failed"; exit 1; }
+
+          # A new project grants everything on new objects by default; this keeps the backup's own grants exact.
+          cat > dump/prepare.sql <<'SQL'
+          alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated, service_role;
+          alter default privileges for role postgres in schema public revoke all on sequences from anon, authenticated, service_role;
+          alter default privileges for role postgres in schema public revoke all on functions from anon, authenticated, service_role;
+          SQL
+
+          for f in roles schema data; do
+            if [ ! -s "dump/$f.sql" ]; then echo "::error::The $f dump is empty"; exit 1; fi
+          done
+
+          name="bargain-breaks-$(date -u +%Y%m%dT%H%M%SZ).tar.gz.age"
+          tar -cz -C dump . | age -r "$AGE_RECIPIENT" -o "$name"
+          find dump -type f -exec shred -u {} +
+
+          region="$(echo "$B2_ENDPOINT" | sed -E 's#^https://s3\.([^.]+)\..*#\1#')"
+          step="Upload"
+          run aws s3 cp "$name" "s3://$B2_BUCKET/$name" --endpoint-url "$B2_ENDPOINT" --region "$region" --only-show-errors
+
+          echo "Uploaded $name ($(stat -c %s "$name") bytes, encrypted)"
