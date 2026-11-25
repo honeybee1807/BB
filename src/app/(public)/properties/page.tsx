@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
 import { PropertyCard } from "@/components/site/property-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { listProperties, listRegions } from "@/lib/data/public";
 import { plural } from "@/lib/format";
 import { GUEST_OPTIONS, isFiltered, matchesFilters, parseFilters } from "@/lib/listing-filters";
 import { staticPageMetadata } from "@/lib/seo";
+
+// The filters are plain GET links and forms, so the page waits for its results instead of
+// streaming them in. Streamed sections need JavaScript to appear.
+export const instant = false;
 
 export function generateMetadata(): Promise<Metadata> {
   return staticPageMetadata("/properties");
@@ -140,9 +143,7 @@ export default function PropertiesPage({ searchParams }: PageProps<"/properties"
         Holiday homes and resorts from the coast to the mountains. Look for the halal accommodation badge, or filter for
         it below.
       </p>
-      <Suspense fallback={<p className="mt-8 text-sm text-muted">Loading homes...</p>}>
-        <Listing searchParams={searchParams} />
-      </Suspense>
+      <Listing searchParams={searchParams} />
     </div>
   );
 }
