@@ -5,6 +5,7 @@ import { PropertyCard } from "@/components/site/property-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { listProperties, listRegions } from "@/lib/data/public";
 import { plural } from "@/lib/format";
+import { GUEST_OPTIONS, isFiltered, matchesFilters, parseFilters } from "@/lib/listing-filters";
 import { staticPageMetadata } from "@/lib/seo";
 
 export function generateMetadata(): Promise<Metadata> {
@@ -13,28 +14,19 @@ export function generateMetadata(): Promise<Metadata> {
 
 const select = "h-12 w-full rounded-public border border-field bg-white px-3 text-[15px] text-ink";
 
-function first(value: string | string[] | undefined): string {
-  return (Array.isArray(value) ? value[0] : value) ?? "";
-}
-
 async function Listing({ searchParams }: { searchParams: PageProps<"/properties">["searchParams"] }) {
-  const params = await searchParams;
-  const halal = first(params.halal) === "1";
-  const region = first(params.region);
-  const estate = first(params.estate);
+  const filters = parseFilters(await searchParams);
+  const { halal, region, estate, guests } = filters;
   const [properties, regions] = await Promise.all([listProperties(), listRegions()]);
 
-  const shown = properties.filter(
-    (p) =>
-      (!halal || p.is_halal) && (!region || p.estate.region.slug === region) && (!estate || p.estate.slug === estate),
-  );
-  const filtered = halal || region || estate;
+  const shown = properties.filter((p) => matchesFilters(p, filters));
+  const filtered = isFiltered(filters);
 
   return (
     <>
       <form
         method="get"
-        className="mt-8 grid gap-4 border border-line p-5 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto_auto]"
+        className="mt-8 grid gap-4 border border-line p-5 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto_auto]"
       >
         <div>
           <label htmlFor="filter-region" className="mb-1.5 block text-[13px] font-medium text-navy">
@@ -66,6 +58,19 @@ async function Listing({ searchParams }: { searchParams: PageProps<"/properties"
                 </optgroup>
               ) : null,
             )}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="filter-guests" className="mb-1.5 block text-[13px] font-medium text-navy">
+            Sleeps at least
+          </label>
+          <select id="filter-guests" name="guests" defaultValue={guests || ""} className={select}>
+            <option value="">Any number of guests</option>
+            {GUEST_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n} guests
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-3 self-end pb-3">
@@ -110,11 +115,18 @@ async function Listing({ searchParams }: { searchParams: PageProps<"/properties"
           ))}
         </ul>
       ) : (
-        <p className="mt-6 border border-line px-6 py-10 text-center text-muted">
-          {filtered
-            ? "No homes match those choices. Try clearing a filter."
-            : "New homes are being added. Send us an inquiry and we'll suggest something that suits you."}
-        </p>
+        <div className="mt-6 border border-line px-6 py-10 text-center text-muted">
+          {filtered ? (
+            <>
+              <p>No properties match those choices.</p>
+              <Link href="/properties" className="mt-3 inline-block text-navy underline underline-offset-4">
+                Show all homes
+              </Link>
+            </>
+          ) : (
+            <p>{"New homes are being added. Send us an inquiry and we'll suggest something that suits you."}</p>
+          )}
+        </div>
       )}
     </>
   );
