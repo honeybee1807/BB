@@ -44,9 +44,19 @@ test.beforeEach(async ({ page }) => {
   await page.setExtraHTTPHeaders({ "x-forwarded-for": ip });
 });
 
+// Collects policy violations, refused or failed script and image loads, and CSP console errors.
 async function watch(page: Page): Promise<string[]> {
   const blocked: string[] = [];
   await page.exposeFunction("reportCsp", (line: string) => blocked.push(line));
+  page.on("console", (m) => {
+    if (m.type() === "error" && /Content Security Policy|Refused to/i.test(m.text())) blocked.push(m.text());
+  });
+  page.on("requestfailed", (r) => {
+    const failure = r.failure()?.errorText ?? "";
+    // a load cut short by the next navigation is not a block; CSP blocks show as ERR_BLOCKED_BY_CSP
+    if (failure === "net::ERR_ABORTED") return;
+    if (["script", "image", "stylesheet", "font"].includes(r.resourceType())) blocked.push(`${failure} ${r.url()}`);
+  });
   await page.addInitScript(() => {
     document.addEventListener("securitypolicyviolation", (e) => {
       (window as unknown as { reportCsp: (line: string) => void }).reportCsp(`${e.violatedDirective} ${e.blockedURI}`);
@@ -60,7 +70,12 @@ async function check(page: Page, blocked: string[], paths: string[]) {
     blocked.length = 0;
     const res = await page.goto(path, { waitUntil: "networkidle" });
     expect.soft(res!.headers()["content-security-policy"], `header on ${path}`).toContain("default-src 'self'");
-    expect.soft([...blocked], `blocked on ${path}`).toEqual([]);
+    const broken = await page.evaluate(() =>
+      [...document.images]
+        .filter((img) => img.currentSrc && img.complete && img.naturalWidth === 0)
+        .map((img) => img.currentSrc),
+    );
+    expect.soft([...blocked, ...broken.map((src) => `broken image ${src}`)], `blocked on ${path}`).toEqual([]);
   }
 }
 

@@ -71,10 +71,12 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Lighthouse is report-only.
+    continue-on-error: ${{ matrix.suite == 'lighthouse' }}
     strategy:
       fail-fast: false
       matrix:
-        suite: [chromium, browsers, production]
+        suite: [chromium, browsers, production, lighthouse]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -106,7 +108,7 @@ jobs:
           rm "$RUNNER_TEMP/stack.env"
 
       - name: Install Chromium
-        if: matrix.suite != 'browsers'
+        if: matrix.suite == 'chromium' || matrix.suite == 'production'
         run: npx playwright install --with-deps chromium
       - name: Install Firefox and WebKit
         if: matrix.suite == 'browsers'
@@ -134,7 +136,7 @@ jobs:
 
       - name: Build and start the production server
         id: build
-        if: matrix.suite == 'production'
+        if: matrix.suite == 'production' || matrix.suite == 'lighthouse'
         env:
           TITLE: Production build
         run: |
@@ -188,6 +190,46 @@ jobs:
           npx playwright test e2e/publish-status.spec.ts e2e/csp.spec.ts --project desktop-chromium --retries 1 --reporter list,github 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
           sed -n '/^  [0-9]* \(passed\|failed\|flaky\|skipped\|interrupted\|did not run\)/,$p' "$RUNNER_TEMP/out.log" | head -n 60 | eval "$NOTE"
           exit $status
+
+      # Three runs per page and form factor; the run with the median performance score is reported.
+      - name: Lighthouse
+        if: matrix.suite == 'lighthouse' && steps.build.outcome == 'success'
+        env:
+          TITLE: Lighthouse, median of three
+        run: |
+          set +e
+          dir="$RUNNER_TEMP/lighthouse"
+          mkdir -p "$dir"
+          report="lighthouse $(npx --yes lighthouse --version)"$'\n'
+          for page in / /properties/breakers-sea-view-apartment; do
+            for form in mobile desktop; do
+              preset=""
+              if [ "$form" = desktop ]; then preset="--preset=desktop"; fi
+              rm -f "$dir"/run-*.json
+              for i in 1 2 3; do
+                npx --yes lighthouse "http://localhost:3000$page" $preset --quiet \
+                  --chrome-flags="--headless=new --no-sandbox" \
+                  --only-categories=performance,accessibility,best-practices,seo \
+                  --output=json --output-path="$dir/run-$i.json"
+              done
+              scores="$(for f in "$dir"/run-*.json; do jq '(.categories.performance.score // 0) * 100 | round' "$f"; done | tr '\n' ' ')"
+              median="$(for f in "$dir"/run-*.json; do echo "$(jq '.categories.performance.score // 0' "$f") $f"; done | sort -n | sed -n 2p | cut -d' ' -f2)"
+              line="$(jq -r '[
+                "perf \((.categories.performance.score // 0) * 100 | round)",
+                "a11y \((.categories.accessibility.score // 0) * 100 | round)",
+                "best \((.categories["best-practices"].score // 0) * 100 | round)",
+                "seo \((.categories.seo.score // 0) * 100 | round)",
+                "FCP \(.audits["first-contentful-paint"].displayValue)",
+                "LCP \(.audits["largest-contentful-paint"].displayValue)",
+                "TBT \(.audits["total-blocking-time"].displayValue)",
+                "CLS \(.audits["cumulative-layout-shift"].displayValue)"
+              ] | join(", ")' "$median")"
+              report="$report$form $page: $line (perf runs: $scores)"$'\n'
+            done
+          done
+          printf '%s' "$report"
+          printf '%s' "$report" | eval "$NOTE"
+          exit 0
 
       - uses: actions/upload-artifact@v4
         if: failure()
