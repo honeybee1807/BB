@@ -85,7 +85,9 @@ async function watch(page: Page): Promise<string[]> {
 async function check(page: Page, blocked: string[], paths: string[]) {
   for (const path of paths) {
     blocked.length = 0;
-    const res = await page.goto(path, { waitUntil: "networkidle" });
+    const res = await page.goto(path);
+    // pages with the inquiry form never reach network idle, so settle briefly instead
+    await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
     expect.soft(res!.headers()["content-security-policy"], `header on ${path}`).toContain("default-src 'self'");
     const broken = await page.evaluate(() =>
       [...document.images]
