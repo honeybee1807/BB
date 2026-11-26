@@ -10,7 +10,8 @@ import type { InquiryUpdate } from "@/lib/validation/admin";
 import { primaryButton } from "./card";
 import { updateInquiry } from "./requests";
 
-const field = "w-full rounded-xl border border-field bg-white px-4 text-[15px] text-ink";
+const field =
+  "w-full rounded-xl border border-field bg-white px-4 text-[15px] text-ink disabled:cursor-wait disabled:bg-admin-bg disabled:text-muted";
 const label = "mb-2 block text-[11px] font-semibold tracking-[0.14em] text-navy uppercase";
 
 export function InquiryEditor({
@@ -60,12 +61,20 @@ export function InquiryEditor({
     void send(change);
   }
 
+  // The server HTML can be changed before React takes over, and hydration would quietly reset it.
+  const locked = !hydrated;
+
   return (
-    <form method="post" onSubmit={save} noValidate className="flex flex-col gap-5">
+    <form method="post" onSubmit={save} noValidate aria-busy={locked} className="flex flex-col gap-5">
+      {locked && (
+        <p role="status" className="text-sm text-muted">
+          Loading this inquiry...
+        </p>
+      )}
       {!assignedTo && (
         <button
           type="button"
-          disabled={!hydrated || state.kind === "saving"}
+          disabled={locked || state.kind === "saving"}
           onClick={() => void send({ assignedTo: me })}
           className={`${primaryButton} self-start`}
         >
@@ -79,6 +88,7 @@ export function InquiryEditor({
         </label>
         <select
           id="edit-assignee"
+          disabled={locked}
           value={values.assignedTo}
           onChange={(e) => setValues((v) => ({ ...v, assignedTo: e.target.value }))}
           className={`${field} h-12`}
@@ -102,6 +112,7 @@ export function InquiryEditor({
         </label>
         <select
           id="edit-status"
+          disabled={locked}
           value={values.status}
           onChange={(e) => setValues((v) => ({ ...v, status: e.target.value as InquiryStatus }))}
           className={`${field} h-12`}
@@ -121,6 +132,7 @@ export function InquiryEditor({
           id="edit-notes"
           rows={5}
           maxLength={5000}
+          disabled={locked}
           placeholder="Add a note for the team. Guests never see these."
           value={values.notes}
           onChange={(e) => setValues((v) => ({ ...v, notes: e.target.value }))}
@@ -128,7 +140,7 @@ export function InquiryEditor({
         />
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={!hydrated || !changed || state.kind === "saving"} className={primaryButton}>
+        <button type="submit" disabled={locked || !changed || state.kind === "saving"} className={primaryButton}>
           {state.kind === "saving" ? "Saving..." : "Save update"}
           <Check aria-hidden strokeWidth={2} className="size-4" />
         </button>
