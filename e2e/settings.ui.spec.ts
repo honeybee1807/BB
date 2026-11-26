@@ -91,6 +91,8 @@ test("owner adds and removes a share image", async ({ page }) => {
     .toBuffer();
   await card.getByLabel("Add share image").setInputFiles({ name: "share.jpg", mimeType: "image/jpeg", buffer: jpeg });
   await expect(card.getByText("Share image saved.")).toBeVisible();
+  // the card refreshes after a save; leaving mid-refresh cancels the next page load in WebKit
+  await expect(card.getByText("Replace share image")).toBeVisible();
 
   await page.goto(PAGE);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /property-photos\/seo\/.+\.webp$/);
@@ -98,6 +100,7 @@ test("owner adds and removes a share image", async ({ page }) => {
   await page.goto("/admin/settings");
   await card.getByRole("button", { name: "Remove share image" }).click();
   await expect(card.getByText("Share image removed.")).toBeVisible();
+  await expect(card.getByText("Add share image")).toBeVisible();
   await page.goto(PAGE);
   await expect(page.locator('meta[property="og:image"]').first()).toHaveAttribute("content", /\/images\/share\.jpg$/);
 });
