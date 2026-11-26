@@ -5,6 +5,7 @@ import { admin, cleanup, createUser, password, run, trackIp, uniqueIp, type Test
 test.describe.configure({ mode: "serial", timeout: 180_000 });
 
 let team: TestUser;
+let inquiryId = "";
 let real: { property: string; propertyId: string; post: string; postId: string; region: string; estate: string };
 
 test.beforeAll(async () => {
@@ -32,9 +33,25 @@ test.beforeAll(async () => {
     region: estate.region.slug,
     estate: estate.slug,
   };
+  const { data: inquiry, error } = await admin
+    .from("inquiries")
+    .insert({
+      guest_name: "Csp Guest",
+      guest_email: `csp-guest-${run}@example.com`,
+      guest_phone: "0820000000",
+      check_in: "2027-03-01",
+      check_out: "2027-03-04",
+      adults: 2,
+      consent_given_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(`inquiry: ${error.message}`);
+  inquiryId = inquiry.id;
 });
 
 test.afterAll(async () => {
+  if (inquiryId) await admin.from("inquiries").delete().eq("id", inquiryId);
   await cleanup();
 });
 
@@ -111,6 +128,8 @@ test("admin pages load within the policy", async ({ page }) => {
     "/admin/properties/new",
     "/admin/availability",
     "/admin/inquiries",
+    `/admin/inquiries/${inquiryId}`,
+    `/admin/inquiries?view=${inquiryId}`,
     "/admin/journal",
     `/admin/journal/${real.postId}`,
     "/admin/journal/new",
