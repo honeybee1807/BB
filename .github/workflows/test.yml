@@ -16,6 +16,14 @@ concurrency:
 env:
   NOTE: >-
     sed 's/%/%25/g' | awk -v t="$TITLE" 'BEGIN{printf "::notice title=%s::", t} {printf "%s%%0A", $0} END{print ""}'
+  # Every failed attempt's error lines, since GitHub keeps only the first few failure annotations.
+  DETAILS: >-
+    grep -aE '^ +[0-9]+\) \[|^ +(Retry #|Error|Expected|Received)|^ +[-+] ' "$RUNNER_TEMP/out.log" | head -n 200
+    | TITLE="Failure details" eval "$NOTE"
+  # Notes the CSP check leaves on pages that were still loading after five seconds.
+  LOADING: >-
+    jq -r '.. | objects | select(.type? == "still loading") | .description' "$RUNNER_TEMP/results.json"
+    | sort -u | head -n 40 | TITLE="Still loading after five seconds" eval "$NOTE"
 
 jobs:
   check:
@@ -121,8 +129,11 @@ jobs:
           TITLE: Main suite, desktop and mobile Chromium
         run: |
           set +e
-          npx playwright test --retries 1 --reporter list,github 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          export PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/results.json"
+          npx playwright test --retries 1 --reporter list,github,json 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
           sed -n '/^  [0-9]* \(passed\|failed\|flaky\|skipped\|interrupted\|did not run\)/,$p' "$RUNNER_TEMP/out.log" | head -n 60 | eval "$NOTE"
+          eval "$DETAILS"
+          eval "$LOADING"
           exit $status
       - name: Run Firefox and WebKit
         if: matrix.suite == 'browsers'
@@ -137,6 +148,11 @@ jobs:
           sed -n '/^  [0-9]* \(passed\|failed\|flaky\|skipped\|interrupted\|did not run\)/,$p' "$RUNNER_TEMP/out.log" | head -n 60 | eval "$NOTE"
           grep -aiE 'MOZ_CRASH|ABORT|crash|SIGSEGV|SIGKILL|out of memory|oom' "$RUNNER_TEMP/out.log" | grep -v 'Page crashed' \
             | sed -E 's/^.*pw:browser[^ ]* //' | sort | uniq -c | sort -rn | head -n 20 | TITLE="Browser crash output" eval "$NOTE"
+          eval "$DETAILS"
+          # Whether the kernel killed anything for lack of memory during the run.
+          oom="$(sudo dmesg -T | grep -iE 'out of memory|killed process|oom' || true)"
+          { free -m; echo "out-of-memory entries: $(printf '%s' "$oom" | grep -c . || true)"; printf '%s\n' "$oom" | tail -n 20; } \
+            | TITLE="Runner memory" eval "$NOTE"
           exit $status
 
       - name: Build and start the production server
@@ -147,7 +163,7 @@ jobs:
         run: |
           set +e
           npm run build 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
-          sed -n '/^Route (app)/,$p' "$RUNNER_TEMP/out.log" | head -n 50 | eval "$NOTE"
+          sed -n '/^Route (app)/,$p' "$RUNNER_TEMP/out.log" | grep -vE '/api/|/admin' | head -n 80 | eval "$NOTE"
           if [ "$status" -ne 0 ]; then tail -n 30 "$RUNNER_TEMP/out.log"; exit $status; fi
           nohup npm start > "$RUNNER_TEMP/server.log" 2>&1 &
           curl -sf -o /dev/null --retry 30 --retry-connrefused --retry-delay 2 http://localhost:3000/admin/login
@@ -179,6 +195,14 @@ jobs:
             /journal/ci-missing-post /ci-missing-page; do
             probe 404 "$path"
           done
+          # Drafts exist in the database but must answer 404 like missing pages.
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -q -v ON_ERROR_STOP=1 -c "
+            insert into public.properties (estate_id, slug, name, is_published)
+              select id, 'ci-draft-home', 'CI Draft Home', false from public.estates limit 1;
+            insert into public.blog_posts (slug, title, body_md, is_published)
+              values ('ci-draft-post', 'CI Draft Post', 'Draft.', false);" || { report="${report}could not add the drafts"$'\n'; bad=1; }
+          probe 404 /properties/ci-draft-home
+          probe 404 /journal/ci-draft-post
           curl -sSI http://localhost:3000/ | tr -d '\r' \
             | grep -iE '^(content-security-policy|strict-transport-security|x-content-type-options|referrer-policy|permissions-policy|x-frame-options):'
           # Whether the property page's first HTML carries the content or only the loading text, and how fast it starts.
@@ -186,8 +210,11 @@ jobs:
           html="$(curl -s "http://localhost:3000$home")"
           if echo "$html" | grep -q "Loading the home"; then report="${report}$home: loading text in the HTML"$'\n'; fi
           if echo "$html" | grep -q "Breakers Sea View Apartment</h1>"; then report="${report}$home: heading in the HTML"$'\n'; fi
-          ttfb="$(for i in 1 2 3; do curl -s -o /dev/null -w '%{time_starttransfer}s ' "http://localhost:3000$home"; done)"
-          report="${report}$home: first byte $ttfb"$'\n'
+          # /about has no route check, so the gap between the two is roughly what the check costs.
+          for path in $home /about; do
+            ttfb="$(for i in 1 2 3 4 5; do curl -s -o /dev/null -w '%{time_starttransfer}s ' "http://localhost:3000$path"; done)"
+            report="${report}$path: first byte $ttfb"$'\n'
+          done
           printf '%s' "$report"
           printf '%s' "$report" | eval "$NOTE"
           exit $bad
@@ -199,8 +226,11 @@ jobs:
           TITLE: Publish and CSP checks on the production build
         run: |
           set +e
-          npx playwright test e2e/publish-status.spec.ts e2e/csp.spec.ts --project desktop-chromium --retries 1 --reporter list,github 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          export PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/results.json"
+          npx playwright test e2e/publish-status.spec.ts e2e/csp.spec.ts --project desktop-chromium --retries 1 --reporter list,github,json 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
           sed -n '/^  [0-9]* \(passed\|failed\|flaky\|skipped\|interrupted\|did not run\)/,$p' "$RUNNER_TEMP/out.log" | head -n 60 | eval "$NOTE"
+          eval "$DETAILS"
+          eval "$LOADING"
           exit $status
 
       # Three runs per page and form factor; the run with the median performance score is reported.
