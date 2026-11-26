@@ -177,6 +177,8 @@ test("region and estate pages list their homes", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: `Test Region ${run}` })).toBeVisible();
   const estates = page.getByRole("region", { name: "Estates" });
   await estates.getByRole("link", { name: new RegExp(`Test Estate ${run}`) }).click();
+  // separates a navigation that never finished from a page that rendered the wrong thing
+  await expect(page).toHaveURL(new RegExp(`/regions/${slug("test-region")}/${slug("test-estate")}$`));
   await expect(page.getByRole("heading", { level: 1, name: `Test Estate ${run}` })).toBeVisible();
   await expect(page.getByRole("link", { name: new RegExp(`Halal Home ${run}`) })).toBeVisible();
 });
