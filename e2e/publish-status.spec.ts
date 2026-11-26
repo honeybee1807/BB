@@ -20,7 +20,12 @@ async function call(method: "post" | "patch" | "delete", url: string, data?: obj
 // A fresh visitor each time, so nothing is served from a cookie or an earlier response.
 async function visit(path: string) {
   const res = await (await apiAs()).get(path);
-  return { status: res.status(), text: await res.text() };
+  // Next's cache headers, so a stale page says where it came from
+  const cache = Object.entries(res.headers())
+    .filter(([name]) => name.startsWith("x-nextjs") || name === "cache-control" || name === "age")
+    .map(([name, value]) => `${name}: ${value}`)
+    .join("; ");
+  return { status: res.status(), text: await res.text(), cache };
 }
 
 const region = (slug: string) => ({
@@ -102,7 +107,10 @@ test("a home shows, hides, moves and goes with the right status", async () => {
   await call("patch", `/api/admin/properties/${id}`, { is_published: true });
   const live = await visit(`/properties/${slug}`);
   expect(live.status).toBe(200);
-  expect(live.text).toContain(name);
+  expect.soft(live.text, `first visit after publishing (${live.cache})`).toContain(name);
+  // a second look tells a passing race from a page that stays stale; both must pass
+  const again = await visit(`/properties/${slug}`);
+  expect(again.text, `second visit after publishing (${again.cache})`).toContain(name);
   expect((await visit("/properties")).text).toContain(name);
   expect((await visit(`/regions/${tag}-region/${tag}-estate`)).text).toContain(name);
   expect((await visit("/sitemap.xml")).text).toContain(`/properties/${slug}`);
