@@ -128,10 +128,15 @@ jobs:
         if: matrix.suite == 'browsers'
         env:
           TITLE: Firefox and WebKit
+          # Browser output, so a page crash leaves its reason in the log.
+          DEBUG: pw:browser
         run: |
           set +e
-          npx playwright test --config playwright.browsers.config.ts --retries 1 --reporter list,github 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          npx playwright test --config playwright.browsers.config.ts --retries 1 --reporter list,github > "$RUNNER_TEMP/out.log" 2>&1; status=$?
+          grep -v 'pw:browser' "$RUNNER_TEMP/out.log"
           sed -n '/^  [0-9]* \(passed\|failed\|flaky\|skipped\|interrupted\|did not run\)/,$p' "$RUNNER_TEMP/out.log" | head -n 60 | eval "$NOTE"
+          grep -aiE 'MOZ_CRASH|ABORT|crash|SIGSEGV|SIGKILL|out of memory|oom' "$RUNNER_TEMP/out.log" | grep -v 'Page crashed' \
+            | sed -E 's/^.*pw:browser[^ ]* //' | sort | uniq -c | sort -rn | head -n 20 | TITLE="Browser crash output" eval "$NOTE"
           exit $status
 
       - name: Build and start the production server
@@ -176,6 +181,13 @@ jobs:
           done
           curl -sSI http://localhost:3000/ | tr -d '\r' \
             | grep -iE '^(content-security-policy|strict-transport-security|x-content-type-options|referrer-policy|permissions-policy|x-frame-options):'
+          # Whether the property page's first HTML carries the content or only the loading text, and how fast it starts.
+          home=/properties/breakers-sea-view-apartment
+          html="$(curl -s "http://localhost:3000$home")"
+          if echo "$html" | grep -q "Loading the home"; then report="${report}$home: loading text in the HTML"$'\n'; fi
+          if echo "$html" | grep -q "Breakers Sea View Apartment</h1>"; then report="${report}$home: heading in the HTML"$'\n'; fi
+          ttfb="$(for i in 1 2 3; do curl -s -o /dev/null -w '%{time_starttransfer}s ' "http://localhost:3000$home"; done)"
+          report="${report}$home: first byte $ttfb"$'\n'
           printf '%s' "$report"
           printf '%s' "$report" | eval "$NOTE"
           exit $bad
@@ -224,7 +236,17 @@ jobs:
                 "TBT \(.audits["total-blocking-time"].displayValue)",
                 "CLS \(.audits["cumulative-layout-shift"].displayValue)"
               ] | join(", ")' "$median")"
-              report="$report$form $page: $line (perf runs: $scores)"$'\n'
+              diag="$(jq -r '
+                def snips: [.. | objects | select(has("snippet")) | .snippet[0:160]] | unique | .[0:3] | join(" | ");
+                def from(p): [.audits | to_entries[] | select(.key | test(p)) | .value | snips | select(. != "")] | first // "none";
+                [
+                  "TTFB \(.audits["server-response-time"].displayValue // "?")",
+                  "LCP element: \(from("largest-contentful-paint-element|lcp"))",
+                  "shifts: \(from("layout-shift|cls"))",
+                  "below 0.9: \([.audits | to_entries[] | select(.value.score != null and .value.score < 0.9
+                    and .value.scoreDisplayMode != "informative" and .value.scoreDisplayMode != "manual") | .key] | join(", "))"
+                ] | join("; ")' "$median")"
+              report="$report$form $page: $line (perf runs: $scores)"$'\n'"  $diag"$'\n'
             done
           done
           printf '%s' "$report"
