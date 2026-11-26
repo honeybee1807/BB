@@ -1,0 +1,122 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Only the services the tests use.
+      - name: Start the local stack
+        run: npx supabase start -x studio,mailpit,imgproxy,logflare,vector,realtime,edge-runtime,postgres-meta,supavisor
+      - run: npm run db:test
+      - run: npm run test:api
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [chromium, browsers, production]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Start the local stack
+        run: npx supabase start -x studio,mailpit,imgproxy,logflare,vector,realtime,edge-runtime,postgres-meta,supavisor
+
+      # Throwaway settings for this runner only: local stack keys, Cloudflare's always-pass Turnstile test keys and a fresh hash secret.
+      - name: Write the app settings
+        run: |
+          set -euo pipefail
+          npx supabase status -o env > "$RUNNER_TEMP/stack.env"
+          set -a; . "$RUNNER_TEMP/stack.env"; set +a
+          echo "::add-mask::$ANON_KEY"
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+          umask 077
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=$API_URL
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
+          SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
+          TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+          NEXT_PUBLIC_SITE_URL=http://localhost:3000
+          IP_HASH_SECRET=$(openssl rand -hex 32)
+          EOF
+          rm "$RUNNER_TEMP/stack.env"
+
+      - name: Install Chromium
+        if: matrix.suite != 'browsers'
+        run: npx playwright install --with-deps chromium
+      - name: Install Firefox and WebKit
+        if: matrix.suite == 'browsers'
+        run: npx playwright install --with-deps firefox webkit
+
+      - name: Run the main suite
+        if: matrix.suite == 'chromium'
+        run: npm run test:e2e
+      - name: Run Firefox and WebKit
+        if: matrix.suite == 'browsers'
+        run: npm run test:e2e:browsers
+
+      - name: Build and start the production server
+        if: matrix.suite == 'production'
+        run: |
+          npm run build
+          nohup npm start > "$RUNNER_TEMP/server.log" 2>&1 &
+          curl -sf -o /dev/null --retry 30 --retry-connrefused --retry-delay 2 http://localhost:3000/admin/login
+      - name: Check the security headers
+        if: matrix.suite == 'production'
+        run: |
+          set -euo pipefail
+          headers="$(curl -sSI http://localhost:3000/)"
+          echo "$headers" | grep -iE '^(content-security-policy|strict-transport-security|x-content-type-options|referrer-policy|permissions-policy|x-frame-options):' || true
+          csp="$(echo "$headers" | grep -i '^content-security-policy:' || true)"
+          if [ -z "$csp" ]; then echo "::error::No CSP header"; exit 1; fi
+          if echo "$csp" | grep -q "unsafe-eval"; then echo "::error::The production CSP allows unsafe-eval"; exit 1; fi
+      # CI is cleared so Playwright uses the production server instead of starting the dev server.
+      - name: Run the publish checks against the production build
+        if: matrix.suite == 'production'
+        env:
+          CI: ""
+        run: npx playwright test e2e/publish-status.spec.ts --project desktop-chromium
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-${{ matrix.suite }}
+          path: test-results/
+          retention-days: 7
