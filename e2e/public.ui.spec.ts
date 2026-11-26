@@ -215,9 +215,12 @@ test("the inquiry form shows errors, then sends", async ({ page }) => {
 });
 
 test("an early click never puts guest details in the URL", async ({ page }) => {
-  // hold the scripts back so the form is still server-rendered HTML
+  // hold the scripts back until the click, so the form is still server-rendered HTML; a fixed
+  // delay ran out on slow WebKit before the fields were filled
+  let release = () => {};
+  const held = new Promise<void>((done) => (release = done));
   await page.route("**/_next/static/chunks/**", async (route) => {
-    await new Promise((done) => setTimeout(done, 3000));
+    await held;
     await route.continue();
   });
   await page.goto("/contact", { waitUntil: "commit" });
@@ -227,6 +230,7 @@ test("an early click never puts guest details in the URL", async ({ page }) => {
   const send = form.getByRole("button", { name: "Send inquiry" });
   await expect(send).toBeDisabled();
   await send.click({ force: true, noWaitAfter: true });
+  release();
   await expect(send).toBeEnabled();
   expect(new URL(page.url()).search).toBe("");
 });

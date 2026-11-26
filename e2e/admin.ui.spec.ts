@@ -38,9 +38,11 @@ async function signIn(page: Page, user: TestUser) {
 }
 
 test("an early click never puts the password in the URL", async ({ page }) => {
-  // hold the scripts back so the form is still server-rendered HTML
+  // hold the scripts back until the click, so the form is still server-rendered HTML
+  let release = () => {};
+  const held = new Promise<void>((done) => (release = done));
   await page.route("**/_next/static/chunks/**", async (route) => {
-    await new Promise((done) => setTimeout(done, 3000));
+    await held;
     await route.continue();
   });
   await page.goto("/admin/login", { waitUntil: "commit" });
@@ -49,6 +51,7 @@ test("an early click never puts the password in the URL", async ({ page }) => {
   const signIn = page.getByRole("button", { name: "Sign in" });
   await expect(signIn).toBeDisabled();
   await signIn.click({ force: true, noWaitAfter: true });
+  release();
   await expect(signIn).toBeEnabled();
   expect(page.url()).not.toContain("password");
   expect(new URL(page.url()).search).toBe("");
