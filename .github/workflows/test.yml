@@ -12,6 +12,11 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+# Each test step posts the tail of its output as an annotation, so results show on the run page.
+env:
+  NOTE: >-
+    sed 's/%/%25/g' | awk -v t="$TITLE" 'BEGIN{printf "::notice title=%s::", t} {printf "%s%%0A", $0} END{print ""}'
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -23,7 +28,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run check
+      - name: Typecheck, lint and unit tests
+        env:
+          TITLE: Typecheck, lint and unit tests
+        run: |
+          set +e
+          npm run check 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          tail -n 12 "$RUNNER_TEMP/out.log" | eval "$NOTE"
+          exit $status
 
   database:
     runs-on: ubuntu-latest
@@ -38,12 +50,27 @@ jobs:
       # Only the services the tests use.
       - name: Start the local stack
         run: npx supabase start -x studio,mailpit,imgproxy,logflare,vector,realtime,edge-runtime,postgres-meta,supavisor
-      - run: npm run db:test
-      - run: npm run test:api
+      - name: Database tests
+        env:
+          TITLE: Database tests
+        run: |
+          set +e
+          npm run db:test 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          { grep -E 'not ok|Failed|Wstat' "$RUNNER_TEMP/out.log"; tail -n 6 "$RUNNER_TEMP/out.log"; } | eval "$NOTE"
+          exit $status
+      - name: API tests
+        if: success() || failure()
+        env:
+          TITLE: API tests
+        run: |
+          set +e
+          npm run test:api 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          { grep -E 'FAIL|×' "$RUNNER_TEMP/out.log" | head -n 20; tail -n 8 "$RUNNER_TEMP/out.log"; } | eval "$NOTE"
+          exit $status
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -85,34 +112,82 @@ jobs:
         if: matrix.suite == 'browsers'
         run: npx playwright install --with-deps firefox webkit
 
+      # A failed test is run once more, so a flaky result shows both attempts.
       - name: Run the main suite
         if: matrix.suite == 'chromium'
-        run: npm run test:e2e
+        env:
+          TITLE: Main suite, desktop and mobile Chromium
+        run: |
+          set +e
+          npx playwright test --retries 1 --reporter list,github 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          sed -n '/^  [0-9]* \(passed\|failed\|flaky\|skipped\|interrupted\|did not run\)/,$p' "$RUNNER_TEMP/out.log" | head -n 60 | eval "$NOTE"
+          exit $status
       - name: Run Firefox and WebKit
         if: matrix.suite == 'browsers'
-        run: npm run test:e2e:browsers
+        env:
+          TITLE: Firefox and WebKit
+        run: |
+          set +e
+          npx playwright test --config playwright.browsers.config.ts --retries 1 --reporter list,github 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          sed -n '/^  [0-9]* \(passed\|failed\|flaky\|skipped\|interrupted\|did not run\)/,$p' "$RUNNER_TEMP/out.log" | head -n 60 | eval "$NOTE"
+          exit $status
 
       - name: Build and start the production server
-        if: matrix.suite == 'production'
-        run: |
-          npm run build
-          nohup npm start > "$RUNNER_TEMP/server.log" 2>&1 &
-          curl -sf -o /dev/null --retry 30 --retry-connrefused --retry-delay 2 http://localhost:3000/admin/login
-      - name: Check the security headers
-        if: matrix.suite == 'production'
-        run: |
-          set -euo pipefail
-          headers="$(curl -sSI http://localhost:3000/)"
-          echo "$headers" | grep -iE '^(content-security-policy|strict-transport-security|x-content-type-options|referrer-policy|permissions-policy|x-frame-options):' || true
-          csp="$(echo "$headers" | grep -i '^content-security-policy:' || true)"
-          if [ -z "$csp" ]; then echo "::error::No CSP header"; exit 1; fi
-          if echo "$csp" | grep -q "unsafe-eval"; then echo "::error::The production CSP allows unsafe-eval"; exit 1; fi
-      # CI is cleared so Playwright uses the production server instead of starting the dev server.
-      - name: Run the publish checks against the production build
+        id: build
         if: matrix.suite == 'production'
         env:
+          TITLE: Production build
+        run: |
+          set +e
+          npm run build 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          sed -n '/^Route (app)/,$p' "$RUNNER_TEMP/out.log" | head -n 50 | eval "$NOTE"
+          if [ "$status" -ne 0 ]; then tail -n 30 "$RUNNER_TEMP/out.log"; exit $status; fi
+          nohup npm start > "$RUNNER_TEMP/server.log" 2>&1 &
+          curl -sf -o /dev/null --retry 30 --retry-connrefused --retry-delay 2 http://localhost:3000/admin/login
+      - name: Check status codes and headers with curl -I
+        if: matrix.suite == 'production'
+        env:
+          TITLE: Production status codes and CSP
+        run: |
+          set -uo pipefail
+          bad=0
+          report=""
+          probe() {
+            local want=$1 path=$2 headers code csp
+            headers="$(curl -sSI "http://localhost:3000$path" | tr -d '\r')"
+            code="$(echo "$headers" | head -n 1 | awk '{print $2}')"
+            csp="$(echo "$headers" | grep -i '^content-security-policy:' || true)"
+            line="$code $path"
+            if [ "$code" != "$want" ]; then line="$line (wanted $want)"; bad=1; fi
+            if [ -z "$csp" ]; then line="$line, no CSP"; bad=1; fi
+            if echo "$csp" | grep -q "unsafe-eval"; then line="$line, CSP allows unsafe-eval"; bad=1; fi
+            report="$report$line"$'\n'
+          }
+          for path in / /properties /properties/breakers-sea-view-apartment /regions/umhlanga \
+            /regions/umhlanga/breakers-resort /about /contact /privacy /journal \
+            /journal/placeholder-planning-a-halal-friendly-beach-holiday /admin/login; do
+            probe 200 "$path"
+          done
+          for path in /properties/ci-missing-home /regions/ci-missing /regions/umhlanga/ci-missing \
+            /journal/ci-missing-post /ci-missing-page; do
+            probe 404 "$path"
+          done
+          curl -sSI http://localhost:3000/ | tr -d '\r' \
+            | grep -iE '^(content-security-policy|strict-transport-security|x-content-type-options|referrer-policy|permissions-policy|x-frame-options):'
+          printf '%s' "$report"
+          printf '%s' "$report" | eval "$NOTE"
+          exit $bad
+      # CI is cleared so Playwright uses the production server instead of starting the dev server.
+      - name: Run the publish and CSP checks against the production build
+        if: matrix.suite == 'production' && steps.build.outcome == 'success' && (success() || failure())
+        env:
           CI: ""
-        run: npx playwright test e2e/publish-status.spec.ts --project desktop-chromium
+          TITLE: Publish and CSP checks on the production build
+        run: |
+          set +e
+          npx playwright test e2e/publish-status.spec.ts e2e/csp.spec.ts --project desktop-chromium --retries 1 --reporter list,github 2>&1 | tee "$RUNNER_TEMP/out.log"; status=${PIPESTATUS[0]}
+          sed -n '/^  [0-9]* \(passed\|failed\|flaky\|skipped\|interrupted\|did not run\)/,$p' "$RUNNER_TEMP/out.log" | head -n 60 | eval "$NOTE"
+          exit $status
 
       - uses: actions/upload-artifact@v4
         if: failure()
