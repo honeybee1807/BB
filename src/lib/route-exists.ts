@@ -28,17 +28,10 @@ export function lookupFor(pathname: string): Lookup | "missing" | null {
   return null;
 }
 
-const FOUND_MS = 5 * 60 * 1000;
-const MISSING_MS = 60 * 1000;
-const MAX_ENTRIES = 1000;
-const seen = new Map<string, { exists: boolean; until: number }>();
-
+// Not memoised: the proxy runs apart from the admin routes, so nothing could clear a memo
+// when a page is published or hidden, and a stale answer means a wrong 404 or 200.
 // Unknown when the database cannot be reached, so an outage never turns every page into a 404.
-export async function routeExists(lookup: Lookup, now = Date.now()): Promise<boolean | null> {
-  const key = `${lookup.table}?${lookup.query}`;
-  const cached = seen.get(key);
-  if (cached && cached.until > now) return cached.exists;
-
+export async function routeExists(lookup: Lookup): Promise<boolean | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) return null;
@@ -49,10 +42,7 @@ export async function routeExists(lookup: Lookup, now = Date.now()): Promise<boo
       signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) return null;
-    const exists = ((await res.json()) as unknown[]).length > 0;
-    if (seen.size >= MAX_ENTRIES) seen.clear();
-    seen.set(key, { exists, until: now + (exists ? FOUND_MS : MISSING_MS) });
-    return exists;
+    return ((await res.json()) as unknown[]).length > 0;
   } catch {
     return null;
   }
