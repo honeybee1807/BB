@@ -26,33 +26,33 @@ async function visit(path: string) {
 const region = (slug: string) => ({
   name: `Pub Region ${run}`,
   slug,
-  description: null,
+  description: "",
   sort_order: 0,
-  seo_title: null,
-  seo_description: null,
+  seo_title: "",
+  seo_description: "",
 });
 
 const home = (slug: string, is_published: boolean) => ({
   estate_id: estateId,
   name: `Pub Home ${run}`,
   slug,
-  summary: null,
-  description: null,
+  summary: "",
+  description: "",
   property_type: "holiday_home",
-  town: null,
+  town: "",
   max_guests: 4,
   bedrooms: 2,
   bathrooms: 1,
   is_halal: true,
-  halal_details: null,
+  halal_details: "",
   price_from_zar: null,
   is_featured: false,
   featured_sort_order: 0,
   is_published,
-  instagram_video_url: null,
+  instagram_video_url: "",
   custom_fields: [],
-  seo_title: null,
-  seo_description: null,
+  seo_title: "",
+  seo_description: "",
 });
 
 const post = (slug: string, is_published: boolean) => ({
@@ -61,8 +61,8 @@ const post = (slug: string, is_published: boolean) => ({
   excerpt: "A short test post.",
   body_md: "Some words.",
   is_published,
-  seo_title: null,
-  seo_description: null,
+  seo_title: "",
+  seo_description: "",
 });
 
 test.beforeAll(async () => {
