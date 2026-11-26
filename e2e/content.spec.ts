@@ -24,9 +24,27 @@ test.beforeAll(async ({}, testInfo) => {
   owner = await createUser(`content-owner-${tag}`, { role: "owner", fullName: "Content Owner" });
 });
 
-test.afterAll(async () => {
+test.afterAll(async ({ browser }) => {
   const n = names();
   const { data: homes } = await admin.from("properties").select("id").eq("slug", slugify(n.home));
+  // Delete through the app first: that refreshes the public cache, which would otherwise keep
+  // showing the home with photos whose files are removed below.
+  if (homes?.length) {
+    const ip = uniqueIp();
+    trackIp(ip);
+    const page = await browser.newPage({
+      baseURL: "http://localhost:3000",
+      extraHTTPHeaders: { "x-forwarded-for": ip },
+    });
+    await signInAsOwner(page);
+    for (const h of homes) {
+      const res = await page.request.delete(`/api/admin/properties/${h.id}`, {
+        headers: { origin: "http://localhost:3000" },
+      });
+      expect(res.status()).toBe(200);
+    }
+    await page.close();
+  }
   for (const h of homes ?? []) {
     const { data: files } = await admin.storage.from("property-photos").list(h.id);
     if (files?.length) await admin.storage.from("property-photos").remove(files.map((f) => `${h.id}/${f.name}`));
